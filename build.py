@@ -61,11 +61,41 @@ DOMAINS = {
               "intro": "Codul de proiectare CR 1-1-4/2012 – Evaluarea acțiunii vântului asupra construcțiilor: viteza și presiunea de referință, categoriile de teren, turbulența, răspunsul dinamic."},
 }
 
-# Pe site ajung doar grilele de test.
-QUESTIONS = json.loads((ROOT / "questions_free.json").read_text())
-COUNTS = {k: sum(1 for q in QUESTIONS if q["d"] == k) for k in DOMAINS}
-FREE_TOTAL = len(QUESTIONS)
-SIM_MINUTES = 60  # același ritm ca la examen: 120 de întrebări în 180 de minute
+# Pe site ajung doar grilele de test. O grilă poate apărea în mai multe categorii (legislația e comună).
+POOL = {q["id"]: q for q in json.loads((ROOT / "questions_free.json").read_text())}
+
+CATEGORIES = [
+    {"slug": "expert-a1", "name": "Expert tehnic A1", "short": "Expert A1", "exam": "expert tehnic A1",
+     "scope": "Rezistență mecanică și stabilitate, construcții din beton, beton armat, zidărie și lemn.",
+     "focus": "expertiza tehnică: când e obligatorie, ce reglementări aplici, răspunderea expertului",
+     "tag": "Accent pe expertiza tehnică și pe evaluarea seismică după P100-3.",
+     "ids": ["catuc-01", "catuc-07", "catuc-09", "catuc-11", "catuc-13", "catuc-27", "catuc-42", "proc-01",
+             "hg925-04", "p1001-04", "p1001-10", "p1001-19", "p1001-25", "p1003-02", "p1003-05", "p1003-13",
+             "cr113-01", "cr113-11", "cr114-04", "cr114-10"]},
+    {"slug": "verificator-a1", "name": "Verificator de proiecte A1", "short": "Verificator A1",
+     "exam": "verificator de proiecte A1",
+     "scope": "Rezistență mecanică și stabilitate, construcții din beton, beton armat, zidărie și lemn.",
+     "focus": "verificarea tehnică: niveluri NVP, faze verificate, limitele rolului, răspunderea verificatorului",
+     "tag": "Accent pe verificarea proiectelor: niveluri NVP, faze verificate, răspundere.",
+     "ids": ["catuc-16", "catuc-17", "catuc-19", "catuc-20", "catuc-21", "catuc-23", "catuc-24", "catuc-25",
+             "catuc-33", "hg925-02", "p1001-07", "p1001-13", "p1001-16", "p1001-22", "p1001-28", "p1003-01",
+             "cr113-04", "cr113-07", "cr114-01", "cr114-07"]},
+]
+_DORDER = list(DOMAINS)
+for _c in CATEGORIES:
+    _qs = [POOL[i] for i in _c["ids"]]
+    _c["qs"] = sorted(_qs, key=lambda q: (_DORDER.index(q["d"]), _c["ids"].index(q["id"])))
+    _c["n"] = len(_qs)
+    _c["sim"] = round(_c["n"] * 1.5)  # același ritm ca la examen: 120 de întrebări în 180 de minute
+    _c["pass_n"] = -(-75 * _c["n"] // 120)  # răspunsuri corecte pentru 75 din 120 de puncte
+    _c["domains"] = [k for k in DOMAINS if any(q["d"] == k for q in _qs)]
+    _c["path"] = f"/grile/{_c['slug']}/"
+    _c["study"] = f"/grile/{_c['slug']}/rezolvate/"
+CAT = {c["slug"]: c for c in CATEGORIES}
+FREE_PER_CAT = CATEGORIES[0]["n"]
+SIM_MINUTES = CATEGORIES[0]["sim"]
+assert all(c["n"] == FREE_PER_CAT for c in CATEGORIES)
+assert set(POOL) == {i for c in CATEGORIES for i in c["ids"]}, "questions_free.json conține grile nefolosite"
 
 NB = " "
 
@@ -115,7 +145,7 @@ def display_order(q):
 
 
 NAV = [
-    ("/grile/expert-a1/", "Grile A1"),
+    ("/grile/", "Grile"),
     ("/ghid/examen-atestare-expert-tehnic/", "Ghid examen"),
     ("/ghid/legea-169-2026-experti-verificatori/", "Noul Cod"),
     ("/despre/", "Despre"),
@@ -207,9 +237,9 @@ def crumbs(items):
     return '<p class="crumbs">' + " / ".join(parts) + "</p>", ld
 
 
-NEXT_TEXT = ("Grile Atestare este acum în versiune de test, cu acces gratuit. Dacă grilele se dovedesc utile și "
-             "interesul e suficient, vom trece la o versiune extinsă, cu mai multe tipuri de grile (alte domenii de "
-             "atestare, verificatori de proiecte, responsabili tehnici cu execuția, diriginți de șantier), "
+NEXT_TEXT = ("Grile Atestare este acum în versiune de test, cu acces gratuit. Pregătim și alte categorii, între care "
+             "domeniul A2, diriginții de șantier și responsabilii tehnici cu execuția. Dacă grilele se dovedesc utile "
+             "și interesul e suficient, vom trece la o versiune extinsă, cu mai multe grile la fiecare categorie, "
              "disponibilă pe bază de cont și abonament.")
 
 
@@ -233,7 +263,7 @@ def cartus_html(cells):
         f'<div class="cell"><span class="k">{k}</span><span class="v">{v}</span></div>' for k, v in cells) + "</div>"
 
 
-def sample_html(q):
+def sample_html(q, cat):
     """Întrebare rezolvabilă direct pe prima pagină: variantele sunt butoane, răspunsul apare după alegere."""
     order = display_order(q)
     letters = "abcd"
@@ -244,14 +274,14 @@ def sample_html(q):
     right_letter = letters[order.index(q["c"])]
     return f"""<div class="sample" id="sample" data-c="{q['c']}" data-letter="{right_letter}">
 <p class="sample-title">Încearcă o întrebare din grile</p>
-{cartus_html([("Exemplu", f"1 din {FREE_TOTAL}"), ("Act normativ", fmt(DOMAINS[q['d']]['label']))])}
+{cartus_html([("Categoria", esc(cat['name'])), ("Act normativ", fmt(DOMAINS[q['d']]['label']))])}
 <p class="stem">{fmt(q['q'])}</p>
 <ol class="opts">{opts}</ol>
 <section class="note" hidden aria-live="polite">
 <p class="res"></p>
 <p>{fmt(q['e'])}</p>
 {cartus_html([("Temei legal", fmt(q['r']))])}
-<p><a href="/grile/expert-a1/">Continuă cu celelalte întrebări</a></p>
+<p><a href="{cat['path']}">Continuă cu celelalte întrebări</a></p>
 </section>
 </div>
 <script>
@@ -276,24 +306,58 @@ def sample_html(q):
 </script>"""
 
 
+def register_html():
+    """Registrul categoriilor, ca lista de planșe dintr-un proiect."""
+    rows = "".join(f"""<li>
+<div><h3><a href="{c['path']}">{esc(c['name'])}</a></h3>
+<p>{fmt(c['scope'])} {fmt(c['tag'])} {c['n']}{NB}de grile gratuite, simulare de {c['sim']}{NB}de minute.</p></div>
+<div class="actions"><a class="btn primary" href="{c['path']}">Antrenament</a><a class="btn" href="{c['study']}">Grile rezolvate</a></div>
+</li>""" for c in CATEGORIES)
+    return f'<ul class="reg">{rows}</ul>'
+
+
+def coverage_table():
+    """Câte grile are fiecare categorie din fiecare act normativ."""
+    head = "".join(f'<th scope="col"><a href="{c["path"]}">{esc(c["short"])}</a></th>' for c in CATEGORIES)
+    rows = ""
+    for k, d in DOMAINS.items():
+        cells = "".join(f"<td>{sum(1 for q in c['qs'] if q['d'] == k) or '–'}</td>" for c in CATEGORIES)
+        rows += f'<tr><th scope="row">{fmt(d["short"])}</th>{cells}</tr>'
+    tot = "".join(f"<td>{c['n']}</td>" for c in CATEGORIES)
+    return f"""<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th scope="col">Act normativ</th>{head}</tr></thead>
+<tbody>{rows}</tbody>
+<tfoot><tr><th scope="row">Total</th>{tot}</tr></tfoot>
+</table></div>"""
+
+
+def cat_names(lower=False):
+    names = [(c["name"][0].lower() + c["name"][1:]) if lower else c["name"] for c in CATEGORIES]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " și " + names[-1]
+
+
 def page_home():
-    total = FREE_TOTAL
-    rows = "".join(
-        f'<tr><td><a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["short"])}</a></td><td>{COUNTS[k]}</td></tr>'
-        for k, d in DOMAINS.items())
-    sample = next(q for q in QUESTIONS if q["id"] == "catuc-13")
+    first = CATEGORIES[0]
+    sample = POOL["catuc-13"]
+    if len(CATEGORIES) <= 2:
+        buttons = "".join(f'<a class="btn{" primary" if i == 0 else ""}" href="{c["path"]}">Grile {esc(c["exam"])}</a>'
+                          for i, c in enumerate(CATEGORIES))
+    else:
+        buttons = '<a class="btn primary" href="#categorii">Alege categoria</a>'
     body = f"""
 <section class="hero">
   <div>
-    <h1>Grile pentru atestarea ca expert tehnic A1, după noul Cod al construcțiilor</h1>
-    <p class="lead">{total} de întrebări din Legea nr.{NB}169/2026, P100-1, P100-3 și codurile de zăpadă și vânt. Fiecare are explicație și articolul din care e luată.</p>
-    <div class="actions">
-      <a class="btn primary" href="/grile/expert-a1/">Începe antrenamentul</a>
-      <a class="btn" href="/grile/expert-a1/#simulare">Fă o simulare de {SIM_MINUTES} de minute</a>
-    </div>
+    <h1>Grile pentru examenele de atestare în construcții, după noul Cod</h1>
+    <p class="lead">Pentru {cat_names(lower=True)}: câte {FREE_PER_CAT} de grile gratuite pe categorie, cu explicație și articolul din care e luată fiecare.</p>
+    <div class="actions">{buttons}</div>
     <p class="meta">Gratuit, fără cont. Versiune de test, actualizată după Legea nr.{NB}169/2026, aplicabilă din 25{NB}august{NB}2026.</p>
   </div>
-  {sample_html(sample)}
+  {sample_html(sample, first)}
+</section>
+
+<section class="sec wide" id="categorii">
+  <h2>Categorii</h2>
+  {register_html()}
 </section>
 
 <section class="sec">
@@ -305,19 +369,15 @@ def page_home():
   <h2>Cum lucrezi</h2>
   <dl class="deflist">
     <dt>Antrenament</dt><dd>Lucrezi pe un act normativ sau pe toate. După fiecare răspuns vezi explicația și temeiul legal, iar greșelile se adună într-o listă separată.</dd>
-    <dt>Simulare</dt><dd>{total} de întrebări în ordine aleatorie, în {SIM_MINUTES} de minute, același ritm ca la examen. Punctajul se raportează la 120, cu pragul de 75, iar la final primești fișa de corectare.</dd>
-    <dt>Pagini de studiu</dt><dd>Pentru fiecare act normativ, întrebările cu răspunsuri, de citit înainte de examen.</dd>
+    <dt>Simulare</dt><dd>{FREE_PER_CAT} de întrebări în ordine aleatorie, în {SIM_MINUTES} de minute, același ritm ca la examen. Punctajul se raportează la 120, cu pragul de 75, iar la final primești fișa de corectare.</dd>
+    <dt>Grile rezolvate</dt><dd>Pentru fiecare categorie, toate întrebările cu răspunsuri, grupate pe acte normative, de citit înainte de examen.</dd>
     <dt>Fără cont</dt><dd>Progresul rămâne pe telefonul sau calculatorul tău. Dacă închizi pagina în timpul simulării, continui de unde ai rămas.</dd>
   </dl>
 </section>
 
 <section class="sec">
   <h2>Ce acoperă grilele</h2>
-  <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Act normativ</th><th>Întrebări</th></tr></thead>
-    <tbody>{rows}</tbody>
-    <tfoot><tr><td>Total</td><td>{total}</td></tr></tfoot>
-  </table></div>
+  {coverage_table()}
 </section>
 
 {waitlist_box()}
@@ -329,90 +389,145 @@ def page_home():
 """
     schema = [{"@context": "https://schema.org", "@type": "WebSite", "name": CONFIG["name"], "url": BASE + "/",
                "inLanguage": "ro"}]
-    return layout("/", "Grile atestare expert tehnic A1 după noul Cod al construcțiilor",
-                  f"{total} de grile gratuite pentru atestarea ca expert tehnic A1 (MDLPA), cu explicații și temei legal, actualizate după Legea nr. 169/2026. Antrenament și simulare de examen.",
+    return layout("/", "Grile atestare expert tehnic și verificator de proiecte, după noul Cod",
+                  f"Grile gratuite pentru atestarea MDLPA ca expert tehnic sau verificator de proiecte A1, câte {FREE_PER_CAT} pe categorie, cu explicații și temei legal, după Legea nr. 169/2026. Antrenament și simulare de examen.",
                   body, schema=schema)
 
 
-def page_quiz():
-    dom_labels = {k: d["label"] for k, d in DOMAINS.items()}
-    cfg = {"domains": dom_labels, "storeKey": "grile-a1-free-v1", "simKey": "grile-a1-free-sim-v1",
-           "simMinutes": SIM_MINUTES,
-           "email": CONFIG["contact_email"], "waitlist": CONFIG["waitlist_url"]}
-    data = json.dumps(QUESTIONS, ensure_ascii=False).replace("</", "<\\/")
-    study = ", ".join(f'<a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["label"])}</a>' for d in DOMAINS.values())
-    cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/expert-a1/", "Grile Expert A1")])
+def page_index():
+    path = "/grile/"
+    cr, cr_ld = crumbs([("/", "Acasă"), (path, "Grile")])
+    body = f"""
+<div class="prose">
+{cr}
+<h1>Grile pe categorii de atestare</h1>
+<p class="lede">Fiecare categorie are {FREE_PER_CAT} de grile gratuite, cu antrenament explicat, simulare de examen și pagină cu grilele rezolvate.</p>
+</div>
+<section class="sec wide">{register_html()}</section>
+<section class="sec">
+  <h2>Ce acoperă grilele</h2>
+  <p>Legislația e comună tuturor categoriilor, dar întrebările diferă: la expert accentul cade pe expertiza tehnică, la verificator pe verificarea proiectelor.</p>
+  {coverage_table()}
+</section>
+{waitlist_box()}
+"""
+    return path, layout(path, "Grile pe categorii de atestare",
+                        f"Grile gratuite pentru examenele de atestare MDLPA: {cat_names(lower=True)}. Câte {FREE_PER_CAT} pe categorie, cu explicații și temei legal.",
+                        body, schema=[cr_ld])
+
+
+def sources_html(c):
+    src = {
+        "catuc": f"Legea nr.{NB}169/2026 privind Codul amenajării teritoriului, urbanismului și construcțiilor (M.{NB}Of. nr.{NB}661 din 10.08.2026, rectificată în M.{NB}Of. nr.{NB}862 din 14.10.2026)",
+        "proc": f"Procedura aprobată prin Ordinul MDLPA nr.{NB}817/2021",
+        "hg925": f"Regulamentul aprobat prin HG nr.{NB}925/1995, cu modificările aduse prin HG nr.{NB}742/2018",
+        "p1001": "P100-1/2013", "p1003": "P100-3/2019", "cr113": "CR 1-1-3/2012", "cr114": "CR 1-1-4/2012",
+    }
+    return "; ".join(src[k] for k in c["domains"]) + "."
+
+
+def page_quiz(c):
+    dom_labels = {k: DOMAINS[k]["label"] for k in c["domains"]}
+    cfg = {"domains": dom_labels, "storeKey": f"grile-{c['slug']}-v1", "simKey": f"grile-{c['slug']}-sim-v1",
+           "simMinutes": c["sim"], "email": CONFIG["contact_email"], "waitlist": CONFIG["waitlist_url"]}
+    data = json.dumps(c["qs"], ensure_ascii=False).replace("</", "<\\/")
+    others = ", ".join(f'<a href="{o["path"]}">{esc(o["name"])}</a>' for o in CATEGORIES if o is not c)
+    cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/", "Grile"), (c["path"], c["name"])])
     body = f"""
 {cr}
 <header class="app-head">
   <div>
-    <h1>Grile expert tehnic A1</h1>
-    <p>Rezistență mecanică și stabilitate, construcții din beton, beton armat, zidărie și lemn. {FREE_TOTAL} de întrebări, legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}.</p>
+    <h1>Grile {esc(c['exam'])}</h1>
+    <p>{fmt(c['scope'])} {c['n']}{NB}de întrebări, legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}.</p>
   </div>
   <div class="modes" role="group" aria-label="Mod de lucru">
     <button id="mode-practice" aria-pressed="true">Antrenament</button>
-    <button id="mode-sim" aria-pressed="false">Simulare, {SIM_MINUTES} min</button>
+    <button id="mode-sim" aria-pressed="false">Simulare, {c['sim']} min</button>
   </div>
 </header>
 
 <div id="filters" class="filters" role="group" aria-label="Filtru pe acte normative"></div>
 
-<div id="app" class="layout"><noscript><p>Pentru grilele interactive este nevoie de JavaScript. Întrebările se pot citi și în paginile de studiu de mai jos.</p></noscript></div>
+<div id="app" class="layout"><noscript><p>Pentru grilele interactive este nevoie de JavaScript. Întrebările se pot citi și pe <a href="{c['study']}">pagina cu grilele rezolvate</a>.</p></noscript></div>
 
 <footer class="notes">
   <h2>Note</h2>
   <ol>
     <li>Întrebările sunt material de pregătire redactat pe baza textelor publicate. Nu reproduc subiecte oficiale de examen. Verifică forma în vigoare a fiecărui act înainte de examen.</li>
     <li>Procedura de atestare fixează punctajul maxim (120 de puncte), pragul de promovare (75 de puncte) și durata de regulă a examenului (3 ore). Numărul de întrebări și punctajul pe întrebare se stabilesc pentru fiecare sesiune.</li>
-    <li>Simularea gratuită are {FREE_TOTAL} de întrebări în {SIM_MINUTES} de minute, adică același ritm ca la examen (un minut și jumătate pe întrebare). Punctajul se raportează la 120, deci pragul de 75 de puncte înseamnă 25 de răspunsuri corecte din 40.</li>
-    <li>Pagini de studiu, cu întrebările gratuite și răspunsurile lor: {study}.</li>
-    <li>Surse: Legea nr.{NB}169/2026 privind Codul amenajării teritoriului, urbanismului și construcțiilor (M.{NB}Of. nr.{NB}661 din 10.08.2026, rectificată în M.{NB}Of. nr.{NB}862 din 14.10.2026); Procedura aprobată prin Ordinul MDLPA nr.{NB}817/2021; Regulamentul aprobat prin Ordinul MDLPA nr.{NB}895/2023; Regulamentul aprobat prin HG nr.{NB}925/1995, cu modificările aduse prin HG nr.{NB}742/2018; P100-1/2013; P100-3/2019; CR 1-1-3/2012; CR 1-1-4/2012.</li>
+    <li>Simularea gratuită are {c['n']} de întrebări în {c['sim']} de minute, adică același ritm ca la examen (un minut și jumătate pe întrebare). Punctajul se raportează la 120, deci pragul de 75 de puncte înseamnă {c['pass_n']} răspunsuri corecte din {c['n']}.</li>
+    <li>Toate întrebările, cu răspunsuri și explicații, sunt și pe <a href="{c['study']}">pagina cu grilele rezolvate</a>.{f" Alte categorii: {others}." if others else ""}</li>
+    <li>Surse: {sources_html(c)}</li>
   </ol>
 </footer>
 <script type="application/json" id="cfg">{json.dumps(cfg, ensure_ascii=False)}</script>
 <script type="application/json" id="data">{data}</script>
 """
     scripts = f'<script src="/assets/quiz.js?v={CONFIG["updated_iso"]}"></script>\n'
-    return layout("/grile/expert-a1/", "Grile Expert A1 – antrenament și simulare de examen",
-                  f"{FREE_TOTAL} de grile gratuite pentru atestarea ca expert tehnic A1: antrenament pe acte normative, cu explicații și temei legal, și simulare de examen cu punctaj raportat la 120.",
-                  body, schema=[cr_ld], scripts=scripts)
+    return c["path"], layout(c["path"], f"Grile {c['exam']} – antrenament și simulare de examen",
+                             f"{c['n']} de grile gratuite pentru atestarea ca {c['exam']}: antrenament pe acte normative, cu explicații și temei legal, și simulare de examen cu punctaj raportat la 120.",
+                             body, schema=[cr_ld], scripts=scripts, current="/grile/")
 
 
-def page_domain(key):
-    d = DOMAINS[key]
-    qs = [q for q in QUESTIONS if q["d"] == key]
-    path = f"/grile/expert-a1/{d['slug']}/"
-    items = "".join(f"""<li id="{q['id']}">
-<span class="qn">Întrebarea {i + 1} din {len(qs)}</span>
+def page_study(c):
+    path = c["study"]
+    toc = "".join(
+        f'<li><a href="#{DOMAINS[k]["slug"]}">{fmt(DOMAINS[k]["short"])}</a> ({sum(1 for q in c["qs"] if q["d"] == k)})</li>'
+        for k in c["domains"])
+    sections, i = "", 0
+    for k in c["domains"]:
+        d = DOMAINS[k]
+        items = ""
+        for q in (q for q in c["qs"] if q["d"] == k):
+            i += 1
+            order = display_order(q)
+            items += f"""<li id="{q['id']}">
+<span class="qn">Întrebarea {i} din {c['n']}</span>
 <p class="stem">{fmt(q['q'])}</p>
-<ol class="abcd">{''.join(f'<li><span class="l">{"abcd"[j]})</span><span>{fmt(q["o"][o])}</span></li>' for j, o in enumerate(display_order(q)))}</ol>
+<ol class="abcd">{''.join(f'<li><span class="l">{"abcd"[j]})</span><span>{fmt(q["o"][o])}</span></li>' for j, o in enumerate(order))}</ol>
 <details class="ans"><summary>Arată răspunsul</summary>
 <div class="inner">
-<p class="right">Răspuns corect: {"abcd"[display_order(q).index(q['c'])]}) {fmt(q['o'][q['c']])}</p>
+<p class="right">Răspuns corect: {"abcd"[order.index(q['c'])]}) {fmt(q['o'][q['c']])}</p>
 <p>{fmt(q['e'])}</p>
 {cartus_html([("Temei legal", fmt(q['r']))])}
-<p><a href="/grile/expert-a1/?q={q['id']}">Rezolvă în aplicație</a></p>
+<p><a href="{c['path']}?q={q['id']}">Rezolvă în aplicație</a></p>
 </div>
 </details>
-</li>""" for i, q in enumerate(qs))
-    others = ", ".join(f'<a href="/grile/expert-a1/{o["slug"]}/">{fmt(o["label"])}</a>'
-                        for k, o in DOMAINS.items() if k != key)
-    cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/expert-a1/", "Grile Expert A1"), (path, d["label"])])
+</li>"""
+        sections += f"""<section class="sec" id="{d['slug']}">
+<h2>{fmt(d['short'])}</h2>
+<p>{fmt(d['intro'])}</p>
+<ol class="qlist">{items}</ol>
+</section>
+"""
+    cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/", "Grile"), (c["path"], c["name"]), (path, "Grile rezolvate")])
     body = f"""
 <div class="prose">
 {cr}
-<h1>Grile {fmt(d['short'])} pentru examenul de expert tehnic A1</h1>
-<p class="lede">{len(qs)} întrebări gratuite cu răspunsuri, explicații și temei legal.</p>
-<p>{fmt(d['intro'])}</p>
-<p>Încearcă întâi să răspunzi singur, apoi deschide răspunsul. Pentru notare și progres salvat, <a href="/grile/expert-a1/?f={key}">rezolvă aceleași întrebări interactiv</a>.</p>
+<h1>Grile rezolvate pentru examenul de {esc(c['exam'])}</h1>
+<p class="lede">{c['n']} de întrebări gratuite cu răspunsuri, explicații și temei legal, grupate pe acte normative.</p>
+<p>Accentul cade pe {esc(c['focus'])}. Încearcă întâi să răspunzi singur, apoi deschide răspunsul. Pentru notare și progres salvat, <a href="{c['path']}">rezolvă aceleași întrebări interactiv</a>.</p>
+<nav class="toc" aria-label="Acte normative"><ol>{toc}</ol></nav>
 </div>
-<ol class="qlist">{items}</ol>
-<section class="sec"><h2>Alte acte normative</h2><p>{others}</p></section>
+{sections}
 {waitlist_box()}
 """
-    desc = f"{len(qs)} grile {plain(d['short'])} pentru atestarea ca expert tehnic A1, cu răspunsuri, explicații și articolul din lege."
-    return path, layout(path, f"Grile {plain(d['short'])} – expert tehnic A1, cu răspunsuri", desc, body,
-                        schema=[cr_ld], current="/grile/expert-a1/")
+    desc = f"{c['n']} de grile rezolvate pentru atestarea ca {c['exam']}, cu răspunsuri, explicații și articolul din lege: Legea nr. 169/2026, P100-1, P100-3, CR 1-1-3, CR 1-1-4."
+    return path, layout(path, f"Grile rezolvate {c['exam']} – răspunsuri și explicații", desc, body,
+                        schema=[cr_ld], current="/grile/")
+
+
+def redirect_stub(target):
+    """Adresele vechi ale paginilor pe acte normative trimit la pagina cu grilele rezolvate."""
+    url = BASE + target
+    return f"""<!doctype html>
+<html lang="ro"><head><meta charset="utf-8">
+<title>Pagina s-a mutat – {esc(CONFIG['name'])}</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="{url}">
+<meta http-equiv="refresh" content="0; url={target}">
+</head><body><p>Pagina s-a mutat: <a href="{target}">{url}</a></p></body></html>
+"""
 
 
 def page_guide_exam():
@@ -471,7 +586,7 @@ def page_guide_exam():
 <li>Dacă sesiunea are 120 de întrebări, în 180 de minute ai în medie un minut și jumătate pe întrebare. Răspunde întâi la ce știi sigur, marchează restul și revino la ele.</li>
 <li>Dacă regulamentul sesiunii permite bibliografia, exersează cu ea deschisă. Contează cât de repede găsești articolul, nu doar ce ai memorat.</li>
 <li>Începe cu noul Cod: e materia cu cele mai multe schimbări, iar materialele de pregătire scrise înainte de august 2026 nu îl acoperă.</li>
-<li>Lucrează cu cronometru: simularea gratuită are 40 de întrebări în 60 de minute, același ritm ca la examen. Reia apoi doar întrebările greșite.</li>
+<li>Lucrează cu cronometru: simularea gratuită are {FREE_PER_CAT} de întrebări în {SIM_MINUTES} de minute, același ritm ca la examen. Reia apoi doar întrebările greșite.</li>
 </ul>
 <p><a class="btn primary" href="/grile/expert-a1/#simulare">Fă o simulare gratuită</a></p>
 
@@ -526,7 +641,7 @@ def page_guide_code():
 <li>Încadrarea o face proiectantul. Încadrarea sub clasa indicată de Cod este interzisă; până la metodologia de încadrare, clasa se ia din anexa nr.{NB}6. Construcțiile care nu apar în anexă se asimilează motivat cu cea mai apropiată. <span class="src">Art.{NB}370 alin.{NB}(14)–(17)</span></li>
 <li>Exemple din anexa nr.{NB}6: școlile și liceele cu peste 200 de persoane sunt în CC3; creșele și grădinițele în CC3, indiferent de capacitate; clădirile civile mai înalte de 45{NB}m cu peste 500 de persoane în CC4; centralele eoliene și fotovoltaice în CC1. <span class="src">Anexa nr.{NB}6</span></li>
 </ul>
-<p><a href="/grile/expert-a1/legea-169-2026/">Exersează: grile pe Legea nr.{NB}169/2026</a></p>
+<p>Exersează pe noul Cod: <a href="/grile/expert-a1/?f=catuc">grile pentru experți</a>, <a href="/grile/verificator-a1/?f=catuc">grile pentru verificatori</a>.</p>
 
 <h2 id="verificare">3. Verificarea tehnică a proiectelor</h2>
 <ul>
@@ -563,7 +678,7 @@ def page_guide_code():
 <li>Perioada minimă de garanție a lucrărilor, dacă prin contract nu s-a prevăzut alta: 5 ani pentru CC3 și CC4, 3 ani pentru CC2, un an pentru CC1. <span class="src">Art.{NB}531</span></li>
 </ul>
 <p class="warn">Rezumatul nu înlocuiește textul legii. Înainte de examen sau de o decizie profesională, citește articolul în forma oficială în vigoare.</p>
-<p><a class="btn primary" href="/grile/expert-a1/?f=catuc">Rezolvă grilele gratuite pe noul Cod</a></p>
+<div class="actions"><a class="btn primary" href="/grile/verificator-a1/?f=catuc">Grile pe noul Cod pentru verificatori</a><a class="btn" href="/grile/expert-a1/?f=catuc">Grile pentru experți</a></div>
 </article>
 {waitlist_box()}
 """
@@ -582,7 +697,7 @@ def page_about():
 <h1>Despre {esc(CONFIG['name'])}</h1>
 <p class="lede">Grile de pregătire pentru examenele de atestare din construcții, scrise pe baza legislației în vigoare.</p>
 <h2>Ce este</h2>
-<p>{esc(CONFIG['name'])} oferă grile pentru examenul de atestare tehnico-profesională organizat de MDLPA. Prima colecție, pentru expertul tehnic A1, are {FREE_TOTAL} de întrebări de test, gratuite, cu antrenament explicat și simulare de examen. Site-ul este în versiune beta și nu cere cont.</p>
+<p>{esc(CONFIG['name'])} oferă grile pentru examenul de atestare tehnico-profesională organizat de MDLPA. Primele categorii sunt {cat_names(lower=True)}, cu câte {FREE_PER_CAT} de întrebări de test gratuite, antrenament explicat și simulare de examen. Site-ul este în versiune beta și nu cere cont.</p>
 <h2>Cum sunt scrise întrebările</h2>
 <ul>
 <li>Fiecare întrebare pornește de la un articol, un punct sau o relație dintr-un act normativ publicat și are un singur răspuns corect.</li>
@@ -637,7 +752,7 @@ def page_404():
     body = """
 <div class="prose">
 <h1>Pagina nu există</h1>
-<p>Adresa nu corespunde niciunei pagini. Poate cauți <a href="/grile/expert-a1/">grilele pentru expert A1</a> sau <a href="/ghid/examen-atestare-expert-tehnic/">ghidul examenului</a>.</p>
+<p>Adresa nu corespunde niciunei pagini. Poate cauți <a href="/grile/">grilele pe categorii</a> sau <a href="/ghid/examen-atestare-expert-tehnic/">ghidul examenului</a>.</p>
 </div>
 """
     return layout("/404.html", "Pagina nu există", "Pagina căutată nu există.", body)
@@ -685,9 +800,9 @@ def og_image(dest):
     d.rounded_rectangle([80, 80, 136, 136], radius=6, fill=stamp)
     draw(88, 88, "GA", 34, 600, (255, 255, 255), family="ibm-plex-sans-condensed")
     draw(156, 92, "Grile Atestare", 34, 600, ink)
-    draw(80, 200, "Grile pentru atestarea ca expert tehnic A1,", 52, 600, ink)
-    draw(80, 268, "după noul Cod al construcțiilor", 52, 600, ink)
-    draw(80, 360, f"{FREE_TOTAL} de întrebări cu explicație și temei legal.", 32, 400, pencil)
+    draw(80, 200, "Grile pentru examenele de atestare", 52, 600, ink)
+    draw(80, 268, "în construcții, după noul Cod", 52, 600, ink)
+    draw(80, 360, f"{FREE_PER_CAT} de grile gratuite pe categorie, cu explicație și temei legal.", 32, 400, pencil)
     draw(80, 404, "Antrenament și simulare de examen, fără cont.", 32, 400, pencil)
     # cartuș
     x0, y0, x1, y1 = 80, 480, W - 80, 560
@@ -695,7 +810,7 @@ def og_image(dest):
     cols = [x0, 460, 820, x1]
     for x in cols[1:-1]:
         d.line([(x, y0), (x, y1)], fill=line, width=1)
-    cells = [("Site", "grileatestare.ro"), ("Act normativ", "Legea nr. 169/2026"), ("Acces", "gratuit")]
+    cells = [("Site", "grileatestare.ro"), ("Categorii", "Expert și verificator A1"), ("Acces", "gratuit")]
     for (k, v), xa in zip(cells, cols[:-1]):
         draw(xa + 16, y0 + 10, k, 20, 500, pencil, family="ibm-plex-sans-condensed")
         draw(xa + 16, y0 + 36, v, 28, 600, ink, family="ibm-plex-sans-condensed")
@@ -711,15 +826,21 @@ def main():
     OUT.mkdir(exist_ok=True)
     shutil.copytree(ROOT / "assets", OUT / "assets", dirs_exist_ok=True)
 
-    pages = {"/": page_home(), "/grile/expert-a1/": page_quiz()}
-    for key in DOMAINS:
-        p, c = page_domain(key)
-        pages[p] = c
+    pages = {"/": page_home()}
+    p, c = page_index()
+    pages[p] = c
+    for cat in CATEGORIES:
+        for fn in (page_quiz, page_study):
+            p, c = fn(cat)
+            pages[p] = c
     for fn in (page_guide_exam, page_guide_code, page_about, page_privacy):
         p, c = fn()
         pages[p] = c
     for p, c in pages.items():
         write(p, c)
+    # adresele vechi (o pagină pe act normativ) trimit la secțiunea din pagina cu grilele rezolvate
+    for d in DOMAINS.values():
+        write(f"/grile/expert-a1/{d['slug']}/", redirect_stub(f"{CAT['expert-a1']['study']}#{d['slug']}"))
     (OUT / "404.html").write_text(page_404(), encoding="utf-8")
     (OUT / "favicon.svg").write_text(favicon(), encoding="utf-8")
     og_image(OUT / "assets/og.png")

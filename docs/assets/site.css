@@ -134,6 +134,24 @@ main.site-main { padding-block: 28px 64px; display: flex; flex-direction: column
 .tbl thead th { font: 600 13px/1.3 var(--cond); color: var(--pencil); border-bottom: 1.5px solid var(--ink); }
 .tbl tfoot td { font-weight: 600; border-bottom: 0; }
 
+.tbl tbody th { font-weight: 400; }
+.tbl tfoot th, .tbl tfoot td { font-weight: 600; border-bottom: 0; }
+.tbl thead th a { color: inherit; }
+
+/* Registrul categoriilor: ca lista de planșe a unui proiect */
+.reg { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); max-width: 62rem; }
+.reg > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 28px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.reg h3 { margin: 0 0 4px; font-size: 19px; line-height: 1.3; font-weight: 600; }
+.reg h3 a { color: var(--ink); text-decoration: none; }
+.reg h3 a:hover { color: var(--stamp); text-decoration: underline; }
+.reg p { margin: 0; color: var(--pencil); font-size: 15px; max-width: 40em; }
+.reg .actions { justify-content: flex-end; flex-wrap: nowrap; }
+@media (max-width: 700px) {
+  .reg > li { grid-template-columns: minmax(0, 1fr); }
+  .reg .actions { justify-content: stretch; }
+  .reg .actions .btn { flex: 1 1 0; }
+}
+
 .box { border: 1px solid var(--line); border-top: 3px solid var(--stamp); border-radius: 2px; background: var(--panel); padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 46rem; }
 .box h2 { margin: 0; font-size: 20px; font-weight: 600; }
 .box p { margin: 0; }

@@ -14,48 +14,6 @@
   "r": "Legea nr. 169/2026, art. 575 alin. (1)–(2)"
  },
  {
-  "id": "catuc-02",
-  "d": "catuc",
-  "q": "Ce prevede Codul cu privire la Legea nr. 10/1995 privind calitatea în construcții?",
-  "o": [
-   "Se abrogă integral la 25 august 2026",
-   "Se abrogă art. 1–9, art. 11–40 și art. 42–44",
-   "Rămâne integral în vigoare până la apariția normelor Codului",
-   "Se abrogă numai capitolul privind sancțiunile"
-  ],
-  "c": 1,
-  "e": "Abrogarea Legii nr. 10/1995 este parțială. Integral se abrogă Legea nr. 350/2001, Legea nr. 50/1991 și Ordinul nr. 839/2009.",
-  "r": "Legea nr. 169/2026, art. 576 alin. (3)"
- },
- {
-  "id": "catuc-04",
-  "d": "catuc",
-  "q": "Potrivit echivalării stabilite de Cod, clasa de consecințe CC3 corespunde:",
-  "o": [
-   "categoriei de importanță A și clasei de importanță-expunere I",
-   "categoriei de importanță B și clasei de importanță-expunere II",
-   "categoriei de importanță C și clasei de importanță-expunere III",
-   "categoriei de importanță B și clasei de importanță-expunere III"
-  ],
-  "c": 1,
-  "e": "Numerotarea merge invers față de litere: CC4 ↔ A ↔ I, CC3 ↔ B ↔ II, CC2 ↔ C ↔ III, CC1 ↔ D ↔ IV.",
-  "r": "Legea nr. 169/2026, art. 370 alin. (5)"
- },
- {
-  "id": "catuc-06",
-  "d": "catuc",
-  "q": "Cine stabilește clasa de consecințe a unei construcții noi?",
-  "o": [
-   "Verificatorul de proiecte, la verificarea de nivel 2",
-   "Proiectantul; încadrarea într-o clasă inferioară celei indicate de Cod este interzisă",
-   "Autoritatea care emite autorizația de construire",
-   "Beneficiarul, care o poate reduce cu o clasă prin acord scris cu proiectantul"
-  ],
-  "c": 1,
-  "e": "Încadrarea este obligația proiectantului, atât la construcții noi, cât și la intervenții. Până la apariția metodologiei de încadrare, clasa se ia exclusiv din anexa nr. 6 a Codului.",
-  "r": "Legea nr. 169/2026, art. 370 alin. (14)–(16)"
- },
- {
   "id": "catuc-07",
   "d": "catuc",
   "q": "Care dintre situațiile de mai jos **nu** este, potrivit Codului, o situație de expertizare tehnică obligatorie?",
@@ -68,6 +26,34 @@
   "c": 2,
   "e": "Solicitarea asigurătorului apare la alin. (3), printre situațiile în care expertiza se face la cerere. Cazurile obligatorii sunt: intervențiile, dezastrele sau accidentele, expirarea duratei de existență proiectate și influența asupra vecinătăților.",
   "r": "Legea nr. 169/2026, art. 437 alin. (2)–(3)"
+ },
+ {
+  "id": "catuc-09",
+  "d": "catuc",
+  "q": "Dreptul de practică al expertului tehnic se acordă:",
+  "o": [
+   "pe 5 ani, după care se susține din nou examenul",
+   "pe durată nedeterminată și se confirmă periodic, din 5 în 5 ani",
+   "pe durată nedeterminată, fără confirmare periodică",
+   "pe 10 ani, cu viză anuală"
+  ],
+  "c": 1,
+  "e": "Pentru confirmare, expertul prezintă dovada experienței de expert și a cursurilor de pregătire profesională continuă. După vârsta de 70 de ani, condițiile de capacitate de muncă și sănătate se confirmă anual.",
+  "r": "Legea nr. 169/2026, art. 436 alin. (3), (4) și (7)"
+ },
+ {
+  "id": "catuc-11",
+  "d": "catuc",
+  "q": "O expertiză tehnică fundamentează un proiect de intervenție la o construcție existentă. Pe baza căror reglementări se realizează?",
+  "o": [
+   "Cele în vigoare la data recepției construcției inițiale",
+   "Cele în vigoare la data semnării contractului de expertiză",
+   "Legislația existentă la data aplicării pentru obținerea autorizației de construire",
+   "Cele alese de expert, cu acordul beneficiarului"
+  ],
+  "c": 2,
+  "e": "Regula generală este data semnării contractului de expertiză. Când expertiza fundamentează un proiect de construire sau de intervenție, se aplică legislația de la data cererii de autorizare.",
+  "r": "Legea nr. 169/2026, art. 439 alin. (1) lit. b)"
  },
  {
   "id": "catuc-13",
@@ -112,6 +98,34 @@
   "r": "Legea nr. 169/2026, art. 440 alin. (4)"
  },
  {
+  "id": "catuc-19",
+  "d": "catuc",
+  "q": "Ce faze de proiectare verifică verificatorul tehnic?",
+  "o": [
+   "Studiul de fezabilitate, PAC și PTh",
+   "PAC, PTh și DE; nu verifică studiul de fezabilitate, conceptul și proiectul real executat",
+   "Toate fazele, inclusiv proiectul real executat",
+   "Numai PTh și DE"
+  ],
+  "c": 1,
+  "e": "Fazele verificate sunt proiectul pentru autorizarea construirii (PAC), proiectul tehnic de execuție (PTh) și detaliile de execuție (DE).",
+  "r": "Legea nr. 169/2026, art. 445 alin. (3)–(4)"
+ },
+ {
+  "id": "catuc-20",
+  "d": "catuc",
+  "q": "Verificatorul tehnic are responsabilitatea verificării dispozițiilor de șantier?",
+  "o": [
+   "Da, pentru toate construcțiile din CC3 și CC4",
+   "Nu, cu excepția investițiilor de consolidare a clădirilor și a clădirilor monument istoric",
+   "Da, în toate cazurile",
+   "Nu, în niciun caz"
+  ],
+  "c": 1,
+  "e": "Misiunea verificatorului se încheie la predarea proiectului, cu excepția acestor situații. Verificatorul nu răspunde nici de verificarea lucrărilor pe șantier.",
+  "r": "Legea nr. 169/2026, art. 445 alin. (5)–(7)"
+ },
+ {
   "id": "catuc-21",
   "d": "catuc",
   "q": "Poate verificatorul tehnic atestat să modifice soluția de proiectare propusă de inginerul proiectant?",
@@ -126,6 +140,20 @@
   "r": "Legea nr. 169/2026, art. 445 alin. (9)–(10)"
  },
  {
+  "id": "catuc-23",
+  "d": "catuc",
+  "q": "Verificatorul tehnic respectă reglementările tehnice în vigoare la data:",
+  "o": [
+   "semnării contractului de verificare",
+   "depunerii documentației pentru obținerea autorizației de construire",
+   "elaborării temei de proiectare",
+   "recepției la terminarea lucrărilor"
+  ],
+  "c": 1,
+  "e": "Pentru verificator, data de referință este depunerea documentației pentru autorizare. Pentru expert, regula generală este data semnării contractului de expertiză, cu excepția expertizelor care fundamentează un proiect.",
+  "r": "Legea nr. 169/2026, art. 445 alin. (1) lit. a); art. 439 alin. (1) lit. b)"
+ },
+ {
   "id": "catuc-24",
   "d": "catuc",
   "q": "Cât timp răspunde verificatorul tehnic atestat pentru concluziile verificării?",
@@ -138,6 +166,20 @@
   "c": 1,
   "e": "Aceeași regulă se aplică proiectantului atestat și societății de verificare tehnică.",
   "r": "Legea nr. 169/2026, art. 446 alin. (1)"
+ },
+ {
+  "id": "catuc-25",
+  "d": "catuc",
+  "q": "Cum este gradată răspunderea verificatorului atestat în funcție de nivelul de verificare?",
+  "o": [
+   "Este aceeași la toate nivelurile",
+   "Limitată la NVP2, avansată la NVP3 și NVP4; se suprapune cu a proiectantului numai pentru elementele verificate",
+   "Inexistentă la NVP2",
+   "Integrală la NVP4, solidară cu a proiectantului pentru întregul proiect"
+  ],
+  "c": 1,
+  "e": "Răspunderea este proporțională cu tipul de verificare și acoperă doar elementele pe care verificatorul le-a verificat efectiv.",
+  "r": "Legea nr. 169/2026, art. 446 alin. (2)"
  },
  {
   "id": "catuc-27",
@@ -168,20 +210,6 @@
   "r": "Legea nr. 169/2026, art. 570 alin. (1) lit. ff) și alin. (2) lit. c)"
  },
  {
-  "id": "catuc-37",
-  "d": "catuc",
-  "q": "Care este perioada minimă de garanție a lucrărilor pentru o construcție din CC3, dacă prin contract nu s-a prevăzut alta?",
-  "o": [
-   "1 an",
-   "3 ani",
-   "5 ani",
-   "10 ani"
-  ],
-  "c": 2,
-  "e": "Perioadele minime sunt: 5 ani pentru CC3 și CC4, 3 ani pentru CC2 și 1 an pentru CC1.",
-  "r": "Legea nr. 169/2026, art. 531 alin. (6)–(7)"
- },
- {
   "id": "catuc-42",
   "d": "catuc",
   "q": "Ce prag de pierderi de vieți omenești estimate corespunde clasei de consecințe CC2?",
@@ -210,34 +238,6 @@
   "r": "Procedura aprobată prin Ordinul MDLPA nr. 817/2021, art. 26 alin. (2)–(4)"
  },
  {
-  "id": "proc-03",
-  "d": "proc",
-  "q": "Ce se întâmplă, potrivit Procedurii, cu subiectele de examen admise la contestație ca având vicii de formulare?",
-  "o": [
-   "Se acordă punctajul integral tuturor candidaților",
-   "Se anulează, iar punctele respective se scad atât din punctajul maxim, cât și din minimul de promovare",
-   "Se înlocuiesc cu alte subiecte la sesiunea următoare",
-   "Se anulează, iar pragul de promovare rămâne 75 de puncte"
-  ],
-  "c": 1,
-  "e": "Dacă la contestații se constată răspunsuri marcate greșit în varianta martor, aceasta se modifică și toate lucrările se recorectează.",
-  "r": "Procedura aprobată prin Ordinul MDLPA nr. 817/2021, art. 29–30"
- },
- {
-  "id": "hg925-01",
-  "d": "hg925",
-  "q": "Potrivit Regulamentului aprobat prin HG nr. 925/1995, câte calități poate avea aceeași persoană pentru aceeași investiție?",
-  "o": [
-   "Una singură: verificator, expert, responsabil tehnic cu execuția sau diriginte de șantier",
-   "Două, dacă una dintre ele este de verificator",
-   "Oricâte, dacă este atestată în toate domeniile",
-   "Două, cu acordul investitorului"
-  ],
-  "c": 0,
-  "e": "Regulamentul interzice cumularea rolurilor pe aceeași investiție, pentru a păstra independența controlului.",
-  "r": "Regulamentul aprobat prin HG nr. 925/1995, art. 16"
- },
- {
   "id": "hg925-02",
   "d": "hg925",
   "q": "Potrivit Regulamentului aprobat prin HG nr. 925/1995, verificatorul atestat nu poate verifica, semna și ștampila proiectele:",
@@ -252,18 +252,18 @@
   "r": "Regulamentul aprobat prin HG nr. 925/1995, art. 8 lit. a)–c)"
  },
  {
-  "id": "p1001-01",
-  "d": "p1001",
-  "q": "În P100-1/2013, acțiunea seismică de proiectare pentru cerința de siguranță a vieții corespunde unui interval mediu de recurență de:",
+  "id": "hg925-04",
+  "d": "hg925",
+  "q": "Potrivit Regulamentului aprobat prin HG nr. 925/1995, raportul de expertiză tehnică, semnat și ștampilat:",
   "o": [
-   "40 de ani",
-   "100 de ani",
-   "225 de ani (20% probabilitate de depășire în 50 de ani)",
-   "475 de ani (10% probabilitate de depășire în 50 de ani)"
+   "se depune la ISC pentru avizare",
+   "face parte din tema de proiectare pentru documentația de intervenție sau desființare și se înregistrează în registrul expertului și în registrul electronic",
+   "se păstrează numai în arhiva expertului",
+   "înlocuiește proiectul tehnic de execuție"
   ],
-  "c": 2,
-  "e": "Intervalul de 40 de ani este cel pentru cerința de limitare a degradărilor. Valoarea de 475 de ani (10% în 50 de ani) apare doar în proiectul de revizuire a codului, care nu este aprobat.",
-  "r": "P100-1/2013, pct. 2.1"
+  "c": 1,
+  "e": "Originalul se predă beneficiarului, împreună cu o copie a atestatului. Concluziile și măsurile propuse se însușesc de proprietar sau administrator și fundamentează decizia de intervenție sau desființare.",
+  "r": "Regulamentul aprobat prin HG nr. 925/1995, art. 12 alin. (2)–(3)"
  },
  {
   "id": "p1001-04",
@@ -434,18 +434,18 @@
   "r": "P100-3/2019, pct. 2.3(1)–(2)"
  },
  {
-  "id": "p1003-09",
+  "id": "p1003-13",
   "d": "p1003",
-  "q": "O clădire încadrată în clasa Rs I sau Rs II se consolidează. În ce clasă de risc trebuie să poată fi încadrată, cel puțin, după intervenție?",
+  "q": "Poate expertul tehnic recomanda demolarea unei clădiri evaluate după P100-3/2019?",
   "o": [
-   "Rs II",
-   "Rs III",
-   "Rs IV, în toate cazurile",
-   "Clasa nu se mai stabilește după intervenție"
+   "Nu, expertul recomandă numai soluții de consolidare",
+   "Da, dacă clădirea necesită lucrări majore de intervenție",
+   "Da, numai pentru clădirile din Rs IV",
+   "Numai cu acordul Inspectoratului de Stat în Construcții"
   ],
   "c": 1,
-  "e": "Regula generală este cel puțin Rs III. Pentru clădirile proprietate a statului la care se fac reparații majore, codul cere încadrarea în Rs IV.",
-  "r": "P100-3/2019, pct. 3.3(4)–(5)"
+  "e": "Codul permite expertului să recomande demolarea atunci când clădirea ar necesita lucrări majore de intervenție.",
+  "r": "P100-3/2019, pct. 3.3(15)"
  },
  {
   "id": "cr113-01",
