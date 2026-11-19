@@ -142,7 +142,7 @@ def layout(path, title, desc, body, *, schema=None, scripts="", og_type="website
     if CONFIG["google_verification"]:
         head_extra += f'<meta name="google-site-verification" content="{esc(CONFIG["google_verification"])}">\n'
     if CONFIG["cf_beacon_token"]:
-        head_extra += ("<script defer src=\"https://static.cloudflareinsights.com/beacon.min.js\" "
+        head_extra += ("<script type=\"module\" src=\"https://static.cloudflareinsights.com/beacon.min.js\" "
                        f"data-cf-beacon='{{\"token\": \"{esc(CONFIG['cf_beacon_token'])}\"}}'></script>\n")
     ld = ""
     for s in (schema or []):
