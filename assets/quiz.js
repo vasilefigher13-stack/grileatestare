@@ -44,24 +44,30 @@
       .replace(/ (=|≤|<|>|≥|≈) /g, NB + "$1 ")
       .replace(/Rs (I{1,3}V?|IV)\b/g, "Rs" + NB + "$1");
     s = esc(s)
-      .replace(/\*\*([^*]+)\*\*/g, '<strong class="sc">$1</strong>')
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/\*([^*]+)\*/g, "<i>$1</i>")
       .replace(/_\{([^}]+)\}/g, "<sub>$1</sub>")
       .replace(/\^\{([^}]+)\}/g, "<sup>$1</sup>");
     return s;
   }
 
+  function cartus(cells) {
+    return '<div class="cartus">' + cells.map(function (c) {
+      return '<div class="cell' + (c[4] ? " " + c[4] : "") + '"><span class="k">' + c[0] + '</span><span class="v' + (c[2] ? " " + c[2] : "") + '"' + (c[3] ? ' id="' + c[3] + '"' : "") + ">" + c[1] + "</span></div>";
+    }).join("") + "</div>";
+  }
+
   function reportLink(q) {
     if (!CFG.email) return "";
     var subj = "Greșeală în grila " + q.id;
-    var body = "Întrebarea: " + q.q + "\n\nCe credeți că este greșit:\n";
+    var body = "Întrebarea: " + q.q + "\n\nCe crezi că e greșit:\n";
     return '<a class="report" href="mailto:' + CFG.email + "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(body) + '">Semnalează o greșeală la această întrebare</a>';
   }
 
   function waitlistHTML() {
     if (!CFG.waitlist) return "";
-    return '<section class="blk"><h2 class="sc">Ce urmează</h2><p class="hint" style="margin:0">Dacă interesul e suficient, vom trece la o versiune extinsă, cu mai multe tipuri de grile, pe bază de cont și abonament.</p>' +
-      '<a class="btn sc" href="' + esc(CFG.waitlist) + '" target="_blank" rel="noopener">Anunță-mă</a></section>';
+    return '<section class="blk"><h2>Ce urmează</h2><p class="hint">Dacă interesul e suficient, vom trece la o versiune extinsă, cu mai multe tipuri de grile, pe bază de cont și abonament.</p>' +
+      '<a class="btn" href="' + esc(CFG.waitlist) + '" target="_blank" rel="noopener">Anunță-mă</a></section>';
   }
 
   var saved = load(STORE_KEY) || {};
@@ -77,7 +83,7 @@
     sim: null
   };
 
-  /* Reluare simulare întreruptă (de exemplu, pagina închisă în timpul examenului). */
+  /* Reluare simulare întreruptă (de exemplu, pagina închisă în timpul simulării). */
   var pending = load(SIM_KEY);
   if (pending && pending.order && pending.order.every(function (id) { return byId[id]; })) {
     state.sim = pending;
@@ -85,7 +91,7 @@
     if (!pending.done) state.mode = "sim";
   }
 
-  /* Legături directe: ?q=ID deschide întrebarea în antrenament, #simulare deschide simularea. */
+  /* Legături directe: ?q=ID deschide întrebarea, ?f=act filtrează, #simulare deschide simularea. */
   (function deepLink() {
     var m = /[?&]q=([\w-]+)/.exec(location.search);
     var f = /[?&]f=(\w+)/.exec(location.search);
@@ -120,7 +126,7 @@
     var items = [["all", "Toate", ALL.length]];
     Object.keys(DOMAINS).forEach(function (k) { items.push([k, DOMAINS[k], counts[k] || 0]); });
     items.push(["wrong", "Greșite", wrong]);
-    filters.innerHTML = '<span class="lbl">Filtru:</span>' + items.map(function (it) {
+    filters.innerHTML = items.map(function (it) {
       return '<button id="f-' + it[0] + '" data-f="' + it[0] + '" aria-pressed="' + (state.filter === it[0]) + '">' + fmt(it[1]) + ' <span class="n">(' + it[2] + ")</span></button>";
     }).join("");
   }
@@ -129,13 +135,13 @@
     return '<ol class="opts">' + perm.map(function (orig, pos) {
       var cls = "opt", mark = "";
       if (reveal) {
-        if (orig === q.c) { cls += " is-right"; mark = "✓ corect"; }
-        else if (orig === chosen) { cls += " is-wrong"; mark = "✗ răspunsul dvs."; }
+        if (orig === q.c) { cls += " is-right"; mark = "Corect"; }
+        else if (orig === chosen) { cls += " is-wrong"; mark = "Ales de tine"; }
         else cls += " is-dim";
       }
       var pressed = !reveal && orig === chosen;
-      return '<li><button class="' + cls + '" data-o="' + orig + '" aria-pressed="' + pressed + '"' + (reveal ? " disabled" : "") + '>' +
-        '<span class="letter">' + LETTERS[pos] + ')</span><span class="txt">' + fmt(q.o[orig]) + '</span><span class="mark sc">' + mark + "</span></button></li>";
+      return '<li><button class="' + cls + '" data-o="' + orig + '" aria-pressed="' + pressed + '"' + (reveal ? " disabled" : "") + ">" +
+        '<span class="letter">' + LETTERS[pos] + '</span><span class="txt">' + fmt(q.o[orig]) + '</span><span class="mark">' + mark + "</span></button></li>";
     }).join("") + "</ol>";
   }
 
@@ -143,14 +149,16 @@
 
   function noteHTML(q, perm, chosen) {
     var ok = chosen === q.c;
-    var head = ok ? '<span class="runin">Corect.</span> ' : '<span class="runin bad">Greșit; răspunsul corect este ' + letterOf(perm, q.c) + ").</span> ";
-    return '<section class="note" aria-live="polite"><p class="body">' + head + fmt(q.e) + '</p><p class="cite"><span class="sc">Temei legal:</span> <em>' + fmt(q.r) + "</em></p>" +
+    return '<section class="note' + (ok ? "" : " bad") + '" aria-live="polite">' +
+      '<p class="res">' + (ok ? "Corect." : "Greșit. Răspunsul corect este " + letterOf(perm, q.c) + ".") + "</p>" +
+      "<p>" + fmt(q.e) + "</p>" +
+      cartus([["Temei legal", fmt(q.r)]]) +
       (CFG.email ? "<p>" + reportLink(q) + "</p>" : "") + "</section>";
   }
 
   function mapHTML(list, current, cellClass) {
     return '<div class="map">' + list.map(function (q, i) {
-      return '<button class="cell ' + cellClass(q) + (i === current ? " current" : "") + '" data-i="' + i + '" aria-label="Întrebarea ' + (i + 1) + '">' + (i + 1) + "</button>";
+      return '<button class="cell-q ' + cellClass(q) + (i === current ? " current" : "") + '" data-i="' + i + '" aria-label="Întrebarea ' + (i + 1) + '">' + (i + 1) + "</button>";
     }).join("") + "</div>";
   }
 
@@ -158,7 +166,7 @@
   function renderPractice() {
     var list = practiceList();
     if (!list.length) {
-      app.innerHTML = '<article class="q"><p class="stem">Nu există întrebări greșite în acest moment.</p><p class="hint">Alegeți „Toate” sau un act normativ pentru a continua.</p></article><aside class="rail"></aside>';
+      app.innerHTML = '<article class="q"><p class="stem">Nu ai întrebări greșite.</p><p class="hint">Alege „Toate” sau un act normativ ca să continui.</p></article><aside class="rail"></aside>';
       return;
     }
     if (state.pIdx >= list.length) state.pIdx = list.length - 1;
@@ -172,31 +180,32 @@
 
     app.innerHTML =
       '<article class="q">' +
-        '<header class="q-head"><span class="q-num sc">Întrebarea ' + (state.pIdx + 1) + ' <span class="of">din ' + list.length + '</span></span><span class="q-src">' + fmt(DOMAINS[q.d]) + "</span></header>" +
+        cartus([["Întrebarea", (state.pIdx + 1) + " / " + list.length], ["Act normativ", fmt(DOMAINS[q.d])]]) +
         '<p class="stem">' + fmt(q.q) + "</p>" +
         optionsHTML(q, perm, chosen, reveal) +
-        (reveal ? noteHTML(q, perm, chosen) : '<p class="hint">Alegeți un răspuns. Pe calculator puteți folosi și tastele a–d sau 1–4.</p>') +
-        '<nav class="pager"><button class="btn sc" id="p-prev"' + (state.pIdx === 0 ? " disabled" : "") + '>← Anterioara</button>' +
-        '<button class="btn primary sc" id="p-next"' + (state.pIdx === list.length - 1 ? " disabled" : "") + ">Următoarea →</button></nav>" +
+        (reveal ? noteHTML(q, perm, chosen) : '<p class="hint">Alege un răspuns. Pe calculator merg și tastele a–d sau 1–4.</p>') +
+        '<nav class="pager"><button class="btn" id="p-prev"' + (state.pIdx === 0 ? " disabled" : "") + ">Înapoi</button>" +
+        '<span class="count">' + (state.pIdx + 1) + " / " + list.length + "</span>" +
+        '<button class="btn primary" id="p-next"' + (state.pIdx === list.length - 1 ? " disabled" : "") + ">Următoarea</button></nav>" +
       "</article>" +
       '<aside class="rail">' +
-        '<section class="blk"><h2 class="sc">Progres</h2><table class="stat"><tbody>' +
+        '<section class="blk"><h2>Progres</h2><table class="stat"><tbody>' +
           "<tr><th>Rezolvate</th><td>" + answered.length + " / " + ALL.length + "</td></tr>" +
           "<tr><th>Corecte</th><td>" + right + "</td></tr>" +
           "<tr><th>Greșite</th><td>" + (answered.length - right) + "</td></tr>" +
           (state.best ? "<tr><th>Cea mai bună simulare</th><td>" + state.best.points + " / " + MAX_POINTS + "</td></tr>" : "") +
         "</tbody></table></section>" +
-        '<section class="blk"><h2 class="sc">Întrebări</h2>' + mapHTML(list, state.pIdx, function (x) {
+        '<section class="blk"><h2>Întrebări</h2>' + mapHTML(list, state.pIdx, function (x) {
           var a = state.practice[x.id];
           return a === undefined ? "" : (a === x.c ? "right" : "wrong");
         }) +
         '<p class="legend"><span class="lg-right">corectă</span><span class="lg-wrong">greșită</span></p>' +
         (state.confirmReset
-          ? '<div class="confirm"><p>Ștergeți tot progresul din antrenament?</p><div class="row"><button class="btn sc" id="p-reset-no">Nu</button><button class="btn primary sc" id="p-reset-yes">Da, șterge</button></div></div>'
+          ? '<div class="confirm"><p>Ștergi tot progresul din antrenament?</p><div class="row"><button class="btn" id="p-reset-no">Nu</button><button class="btn primary" id="p-reset-yes">Da, șterge</button></div></div>'
           : '<button class="linklike" id="p-reset">Șterge progresul</button>') +
         "</section>" +
         (answered.length === ALL.length
-          ? '<section class="blk"><h2 class="sc">Ai rezolvat toate grilele de test</h2><p class="hint" style="margin:0">Poți relua greșelile din filtrul „Greșite” sau poți face o simulare.</p></section>'
+          ? '<section class="blk"><h2>Ai rezolvat toate grilele de test</h2><p class="hint">Poți relua greșelile din filtrul „Greșite” sau poți face o simulare.</p></section>'
           : "") +
         waitlistHTML() +
       "</aside>";
@@ -233,7 +242,7 @@
     if (!state.sim || state.sim.done) { clearInterval(tick); return; }
     var s = remaining();
     var el = document.getElementById("timer");
-    if (el) { el.textContent = clock(s); el.classList.toggle("low", s < 600); }
+    if (el) { el.textContent = clock(s); el.classList.toggle("low", s < 300); }
     if (s <= 0) submitSim();
   }
   function submitSim() {
@@ -258,18 +267,17 @@
     app.innerHTML =
       '<article class="q"><div class="intro">' +
         "<h2>Simulare de examen</h2>" +
-        "<p>Instrucțiuni pentru candidat:</p>" +
         "<ol>" +
-          "<li>Lucrarea cuprinde " + ALL.length + " de întrebări, în ordine aleatorie, cu variantele de răspuns amestecate.</li>" +
-          "<li>Timpul de lucru este de " + SIM_MINUTES + " de minute, același ritm ca la examen. La expirarea timpului, lucrarea se predă automat.</li>" +
-          "<li>Fiecare întrebare are un singur răspuns corect. Punctajul se raportează la " + MAX_POINTS + " de puncte, ca la examen, iar pragul de promovare este de " + PASS_POINTS + " de puncte (" + num(Math.ceil(PASS_POINTS / MAX_POINTS * ALL.length), "răspuns corect", "răspunsuri corecte") + " din " + ALL.length + ").</li>" +
-          "<li>Răspunsurile corecte se afișează numai după predare. Întrebările pot fi marcate pentru revizuire.</li>" +
-          "<li>Lucrarea se salvează pe acest dispozitiv; dacă închideți pagina, simularea continuă de unde ați rămas, cu timpul în curs.</li>" +
+          "<li>Primești toate cele " + ALL.length + " de întrebări, în ordine aleatorie, cu variantele amestecate.</li>" +
+          "<li>Ai " + SIM_MINUTES + " de minute, același ritm ca la examen. Când expiră timpul, lucrarea se predă singură.</li>" +
+          "<li>Fiecare întrebare are un singur răspuns corect. Punctajul se raportează la " + MAX_POINTS + " de puncte, ca la examen. Promovezi de la " + PASS_POINTS + " de puncte, adică " + num(Math.ceil(PASS_POINTS / MAX_POINTS * ALL.length), "răspuns corect", "răspunsuri corecte") + " din " + ALL.length + ".</li>" +
+          "<li>Răspunsurile corecte apar abia după predare. Poți marca întrebările la care vrei să revii.</li>" +
+          "<li>Lucrarea se salvează pe acest dispozitiv. Dacă închizi pagina, continui de unde ai rămas, iar timpul curge mai departe.</li>" +
         "</ol>" +
         '<p class="hint">Distribuție: ' + mix + ".</p>" +
-        '<div class="row"><button class="btn primary sc" id="s-start">Începe simularea</button></div>' +
+        '<div class="actions"><button class="btn primary" id="s-start">Începe simularea</button></div>' +
       "</div></article>" +
-      '<aside class="rail"><section class="blk"><h2 class="sc">Recomandare</h2><p class="hint" style="margin:0">Verificați în regulamentul sesiunii ce materiale sunt permise la examen. Dacă sunt permise, exersați simularea cu documentația deschisă, ca să vă măsurați viteza de căutare.</p></section></aside>';
+      '<aside class="rail"><section class="blk"><h2>Sfat</h2><p class="hint">Verifică în regulamentul sesiunii ce materiale sunt permise la examen. Dacă sunt permise, exersează cu documentația deschisă, ca să-ți măsori viteza de căutare.</p></section></aside>';
   }
 
   function firstUnanswered(sim) {
@@ -291,26 +299,26 @@
     var isFlag = !!(sim.flags && sim.flags[id]);
     app.innerHTML =
       '<article class="q">' +
-        '<header class="q-head"><span class="q-num sc">Întrebarea ' + (sim.idx + 1) + ' <span class="of">din ' + sim.order.length + '</span> · <span class="q-src" style="font-variant-caps:normal;letter-spacing:0">' + fmt(DOMAINS[q.d]) + "</span></span>" +
-        '<span><span class="sc" style="color:var(--muted)">Timp rămas</span> <span class="timer" id="timer">' + clock(remaining()) + "</span></span></header>" +
+        cartus([["Întrebarea", (sim.idx + 1) + " / " + sim.order.length], ["Timp rămas", clock(remaining()), "timer", "timer"], ["Act normativ", fmt(DOMAINS[q.d]), "", "", "span-sm"]]) +
         '<p class="stem">' + fmt(q.q) + "</p>" +
         optionsHTML(q, perm, sim.answers[id], false) +
-        '<nav class="pager three"><button class="btn sc" id="s-prev"' + (sim.idx === 0 ? " disabled" : "") + ">← Anterioara</button>" +
-        '<span class="mid"><button class="btn quiet sc" id="s-flag" aria-pressed="' + isFlag + '">' + (isFlag ? "Marcată" : "Marchează") + "</button></span>" +
-        '<button class="btn primary sc" id="s-next"' + (sim.idx === sim.order.length - 1 ? " disabled" : "") + ">Următoarea →</button></nav>" +
+        '<div class="actions"><button class="btn quiet" id="s-flag" aria-pressed="' + isFlag + '">' + (isFlag ? "Marcată pentru revizuire" : "Marchează pentru revizuire") + "</button></div>" +
+        '<nav class="pager"><button class="btn" id="s-prev"' + (sim.idx === 0 ? " disabled" : "") + ">Înapoi</button>" +
+        '<span class="count">' + (sim.idx + 1) + " / " + sim.order.length + "</span>" +
+        '<button class="btn primary" id="s-next"' + (sim.idx === sim.order.length - 1 ? " disabled" : "") + ">Următoarea</button></nav>" +
       "</article>" +
       '<aside class="rail">' +
-        '<section class="blk"><h2 class="sc">Foaie de răspuns</h2>' + mapHTML(list, sim.idx, function (x) {
+        '<section class="blk"><h2>Foaie de răspuns</h2>' + mapHTML(list, sim.idx, function (x) {
           return (sim.answers[x.id] !== undefined ? "answered" : "") + (sim.flags && sim.flags[x.id] ? " flagged" : "");
         }) +
         '<p class="legend"><span class="lg-ans">completată</span><span>necompletată</span><span class="lg-flag">marcată</span></p>' +
         '<table class="stat"><tbody><tr><th>Completate</th><td>' + count + " / " + sim.order.length + "</td></tr>" +
-        "<tr><th>Marcate pentru revizuire</th><td>" + flagged + "</td></tr></tbody></table>" +
-        (count < sim.order.length ? '<button class="linklike" id="s-jump">Următoarea necompletată</button>' : "") +
+        "<tr><th>Marcate</th><td>" + flagged + "</td></tr></tbody></table>" +
+        (count < sim.order.length ? '<button class="linklike" id="s-jump">Mergi la următoarea necompletată</button>' : "") +
         "</section>" +
         (sim.confirm
-          ? '<div class="confirm"><p>Predați lucrarea' + (count < sim.order.length ? " cu " + num(sim.order.length - count, "întrebare necompletată", "întrebări necompletate") : "") + '?</p><div class="row"><button class="btn sc" id="s-cancel">Înapoi</button><button class="btn primary sc" id="s-submit">Predă</button></div></div>'
-          : '<button class="btn sc" id="s-ask">Predă lucrarea</button>') +
+          ? '<div class="confirm"><p>Predai lucrarea' + (count < sim.order.length ? " cu " + num(sim.order.length - count, "întrebare necompletată", "întrebări necompletate") : "") + '?</p><div class="row"><button class="btn" id="s-cancel">Nu încă</button><button class="btn primary" id="s-submit">Predă</button></div></div>'
+          : '<button class="btn" id="s-ask">Predă lucrarea</button>') +
       "</aside>";
     updateTimer();
   }
@@ -337,28 +345,28 @@
       if (ok && !state.reviewAll) return "";
       var yours = a === undefined
         ? '<p class="bad">Necompletată.</p>'
-        : "<p" + (ok ? "" : ' class="bad"') + ">Răspunsul dumneavoastră: " + letterOf(perm, a) + ") " + fmt(q.o[a]) + (ok ? " — corect." : " — greșit.") + "</p>";
+        : '<p class="' + (ok ? "good" : "bad") + '">Răspunsul tău: ' + letterOf(perm, a) + ") " + fmt(q.o[a]) + (ok ? ". Corect." : ". Greșit.") + "</p>";
       return '<li value="' + (i + 1) + '"><span class="src">' + fmt(DOMAINS[q.d]) + '</span><p class="stem">' + fmt(q.q) + "</p>" + yours +
         (ok ? "" : "<p>Răspuns corect: " + letterOf(perm, q.c) + ") " + fmt(q.o[q.c]) + "</p>") +
-        "<p>" + fmt(q.e) + '</p><p class="cite"><span class="sc">Temei legal:</span> <em>' + fmt(q.r) + "</em></p>" +
+        "<p>" + fmt(q.e) + '</p><p class="ref"><b>Temei legal:</b> ' + fmt(q.r) + "</p>" +
         (CFG.email ? "<p>" + reportLink(q) + "</p>" : "") + "</li>";
     }).join("");
     app.innerHTML =
       '<article class="result">' +
         '<div class="score"><span class="big">' + sim.points + '</span><span class="of">din ' + MAX_POINTS + " de puncte</span></div>" +
-        '<p class="verdict">Rezultat: <strong class="sc ' + (pass ? "" : "fail") + '">' + (pass ? "Admis" : "Respins") + "</strong>. " + num(sim.correct, "răspuns corect", "răspunsuri corecte") + " din " + sim.order.length + ". Punctajul este raportat la " + MAX_POINTS + ", iar pragul de promovare este de " + PASS_POINTS + " de puncte.</p>" +
-        '<div class="tbl-wrap"><table class="tbl"><caption>Tabelul 1. Rezultate pe acte normative</caption>' +
+        '<p class="verdict">Rezultat: <strong class="' + (pass ? "pass" : "fail") + '">' + (pass ? "admis" : "respins") + "</strong>. Ai " + num(sim.correct, "răspuns corect", "răspunsuri corecte") + " din " + sim.order.length + ". Pragul de promovare este de " + PASS_POINTS + " de puncte.</p>" +
+        '<div class="tbl-wrap"><table class="tbl"><caption>Rezultate pe acte normative</caption>' +
           "<thead><tr><th>Act normativ</th><th>Corecte</th><th>Total</th><th>Procent</th></tr></thead>" +
           "<tbody>" + rows + "</tbody>" +
           "<tfoot><tr><td>Total</td><td>" + sim.correct + "</td><td>" + sim.order.length + "</td><td>" + Math.round(sim.correct / sim.order.length * 100) + "%</td></tr></tfoot>" +
         "</table></div>" +
-        '<div class="pager" style="justify-content:flex-start"><button class="btn primary sc" id="s-again">Simulare nouă</button><button class="btn sc" id="s-practice">Exersează greșelile</button></div>' +
+        '<div class="actions"><button class="btn primary" id="s-again">Simulare nouă</button><button class="btn" id="s-practice">Exersează greșelile</button></div>' +
         '<div class="sec-head"><h2 class="sec-title">Fișa de corectare</h2><div class="seg" role="group" aria-label="Ce se afișează">' +
           '<button id="r-wrong" aria-pressed="' + !state.reviewAll + '">Greșite și necompletate (' + wrongCount + ")</button>" +
           '<button id="r-all" aria-pressed="' + state.reviewAll + '">Toate (' + sim.order.length + ")</button></div></div>" +
         (review ? '<ol class="review">' + review + "</ol>" : '<p class="hint">Nicio întrebare greșită.</p>') +
       "</article>" +
-      '<aside class="rail"><section class="blk"><h2 class="sc">Interpretare</h2><p class="hint" style="margin:0">Tabelul arată unde se pierd puncte. Fișa de corectare păstrează numerotarea din lucrare și dă temeiul legal pentru fiecare întrebare.</p></section>' +
+      '<aside class="rail"><section class="blk"><h2>Cum citești rezultatul</h2><p class="hint">Tabelul arată unde pierzi puncte. Fișa de corectare păstrează numerotarea din lucrare și dă temeiul legal pentru fiecare întrebare.</p></section>' +
       waitlistHTML() + "</aside>";
   }
 
@@ -394,7 +402,7 @@
       else if (sim && !sim.done) { sim.answers[sim.order[sim.idx]] = orig; saveSim(); renderSimRun(); }
       return;
     }
-    if (t.classList.contains("cell")) {
+    if (t.classList.contains("cell-q")) {
       var i = parseInt(t.getAttribute("data-i"), 10);
       if (state.mode === "practice") { state.pIdx = i; renderPractice(); }
       else if (sim && !sim.done) { sim.idx = i; saveSim(); renderSimRun(); }

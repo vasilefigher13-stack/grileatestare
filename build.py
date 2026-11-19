@@ -84,7 +84,7 @@ def fmt(s):
     s = re.sub(r" (=|≤|<|>|≥|≈) ", NB + r"\1 ", s)
     s = re.sub(r"Rs (I{1,3}V?|IV)\b", "Rs" + NB + r"\1", s)
     s = html.escape(s, quote=False)
-    s = re.sub(r"\*\*([^*]+)\*\*", r'<strong class="sc">\1</strong>', s)
+    s = re.sub(r"\*\*([^*]+)\*\*", r'<strong>\1</strong>', s)
     s = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", s)
     s = re.sub(r"_\{([^}]+)\}", r"<sub>\1</sub>", s)
     s = re.sub(r"\^\{([^}]+)\}", r"<sup>\1</sup>", s)
@@ -131,7 +131,7 @@ def mailto(subject=""):
 
 def layout(path, title, desc, body, *, schema=None, scripts="", og_type="website", current=None):
     canonical = BASE + path
-    full_title = title if CONFIG["name"] in title else f"{title} · {CONFIG['name']}"
+    full_title = title if CONFIG["name"] in title else f"{title} – {CONFIG['name']}"
     nav = "".join(
         f'<a href="{href}"{" aria-current=\"page\"" if (current or path) == href else ""}>{esc(label)}</a>'
         for href, label in NAV)
@@ -169,13 +169,13 @@ def layout(path, title, desc, body, *, schema=None, scripts="", og_type="website
 <meta name="theme-color" content="#FAF9F6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#151413" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/assets/fonts/source-serif-4-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v={CONFIG['updated_iso']}">
 {head_extra}{ld}</head>
 <body>
 <a class="skip" href="#continut">Sari la conținut</a>
 <header class="site-head"><div class="wrap">
-<a class="brand" href="/">{esc(CONFIG['name'])}<span class="beta sc">beta</span></a>
+<a class="brand" href="/"><span class="brand-mark" aria-hidden="true">GA</span><span class="brand-name">{esc(CONFIG['name'])}</span><span class="beta">beta</span></a>
 <nav class="site-nav" aria-label="Navigare principală">{nav}</nav>
 </div></header>
 <main id="continut" class="site-main wrap">
@@ -216,10 +216,10 @@ NEXT_TEXT = ("Grile Atestare este acum în versiune de test, cu acces gratuit. D
 def waitlist_box(heading="Ce urmează"):
     text = NEXT_TEXT + " Dacă te-ar interesa, lasă-ne un semn și te anunțăm."
     if CONFIG["waitlist_url"]:
-        btn = f'<a class="btn primary sc" href="{esc(CONFIG["waitlist_url"])}" target="_blank" rel="noopener">Anunță-mă</a>'
+        btn = f'<a class="btn primary" href="{esc(CONFIG["waitlist_url"])}" target="_blank" rel="noopener">Anunță-mă</a>'
         note = '<span class="small">Te anunțăm doar la lansare. Te poți dezabona oricând.</span>'
     elif CONFIG["contact_email"]:
-        btn = f'<a class="btn primary sc" href="{mailto("Anunta-ma")}">Anunță-mă prin e-mail</a>'
+        btn = f'<a class="btn primary" href="{mailto("Anunta-ma")}">Anunță-mă prin e-mail</a>'
         note = f'<span class="small">Sau scrie la {esc(CONFIG["contact_email"])} cu subiectul „Anunță-mă”.</span>'
     else:
         btn, note = "", '<span class="small">Formularul de înscriere apare în curând.</span>'
@@ -228,6 +228,54 @@ def waitlist_box(heading="Ce urmează"):
 
 # ---------------------------------------------------------------- Pagini
 
+def cartus_html(cells):
+    return '<div class="cartus">' + "".join(
+        f'<div class="cell"><span class="k">{k}</span><span class="v">{v}</span></div>' for k, v in cells) + "</div>"
+
+
+def sample_html(q):
+    """Întrebare rezolvabilă direct pe prima pagină: variantele sunt butoane, răspunsul apare după alegere."""
+    order = display_order(q)
+    letters = "abcd"
+    opts = "".join(
+        f'<li><button class="opt" data-o="{orig}"><span class="letter">{letters[pos]}</span>'
+        f'<span class="txt">{fmt(q["o"][orig])}</span><span class="mark"></span></button></li>'
+        for pos, orig in enumerate(order))
+    right_letter = letters[order.index(q["c"])]
+    return f"""<div class="sample" id="sample" data-c="{q['c']}" data-letter="{right_letter}">
+<p class="sample-title">Încearcă o întrebare din grile</p>
+{cartus_html([("Exemplu", f"1 din {FREE_TOTAL}"), ("Act normativ", fmt(DOMAINS[q['d']]['label']))])}
+<p class="stem">{fmt(q['q'])}</p>
+<ol class="opts">{opts}</ol>
+<section class="note" hidden aria-live="polite">
+<p class="res"></p>
+<p>{fmt(q['e'])}</p>
+{cartus_html([("Temei legal", fmt(q['r']))])}
+<p><a href="/grile/expert-a1/">Continuă cu celelalte întrebări</a></p>
+</section>
+</div>
+<script>
+(function () {{
+  var box = document.getElementById("sample"), c = box.getAttribute("data-c"), L = box.getAttribute("data-letter");
+  box.addEventListener("click", function (ev) {{
+    var b = ev.target.closest(".opt"); if (!b || b.disabled) return;
+    var chosen = b.getAttribute("data-o");
+    box.querySelectorAll(".opt").forEach(function (o) {{
+      o.disabled = true;
+      var v = o.getAttribute("data-o");
+      if (v === c) {{ o.classList.add("is-right"); o.querySelector(".mark").textContent = "Corect"; }}
+      else if (v === chosen) {{ o.classList.add("is-wrong"); o.querySelector(".mark").textContent = "Ales de tine"; }}
+      else o.classList.add("is-dim");
+    }});
+    var note = box.querySelector(".note"), ok = chosen === c;
+    note.classList.toggle("bad", !ok);
+    note.querySelector(".res").textContent = ok ? "Corect." : "Greșit. Răspunsul corect este " + L + ".";
+    note.hidden = false;
+  }});
+}})();
+</script>"""
+
+
 def page_home():
     total = FREE_TOTAL
     rows = "".join(
@@ -235,34 +283,36 @@ def page_home():
         for k, d in DOMAINS.items())
     sample = next(q for q in QUESTIONS if q["id"] == "catuc-13")
     body = f"""
-<header class="masthead">
-  <p class="kicker sc">Atestare tehnico-profesională MDLPA · Experți tehnici · Verificatori de proiecte</p>
-  <h1>Grile pentru examenul de atestare, după noul Cod al construcțiilor</h1>
-  <p class="subtitle">{total} de întrebări gratuite pentru expert tehnic A1, fiecare cu explicație și cu articolul din lege. Fără cont.</p>
-  <p class="edition">Versiune beta · actualizat după Legea nr.{NB}169/2026, aplicabilă din 25{NB}august{NB}2026</p>
-  <div class="cta-row">
-    <a class="btn primary sc" href="/grile/expert-a1/">Începe antrenamentul</a>
-    <a class="btn sc" href="/grile/expert-a1/#simulare">Simulare de {SIM_MINUTES} de minute</a>
+<section class="hero">
+  <div>
+    <h1>Grile pentru atestarea ca expert tehnic A1, după noul Cod al construcțiilor</h1>
+    <p class="lead">{total} de întrebări din Legea nr.{NB}169/2026, P100-1, P100-3 și codurile de zăpadă și vânt. Fiecare are explicație și articolul din care e luată.</p>
+    <div class="actions">
+      <a class="btn primary" href="/grile/expert-a1/">Începe antrenamentul</a>
+      <a class="btn" href="/grile/expert-a1/#simulare">Fă o simulare de {SIM_MINUTES} de minute</a>
+    </div>
+    <p class="meta">Gratuit, fără cont. Versiune de test, actualizată după Legea nr.{NB}169/2026, aplicabilă din 25{NB}august{NB}2026.</p>
   </div>
-</header>
+  {sample_html(sample)}
+</section>
 
 <section class="sec">
-  <h2>De ce acum</h2>
+  <h2>Ce s-a schimbat în august 2026</h2>
   <p>Din 25 august 2026 se aplică Codul amenajării teritoriului, urbanismului și construcțiilor (Legea nr.{NB}169/2026). Codul a abrogat integral Legea nr.{NB}50/1991 și Legea nr.{NB}350/2001 și cea mai mare parte a Legii nr.{NB}10/1995. Culegerile de grile scrise înainte de această dată nu mai acoperă legislația de bază. Aici, fiecare întrebare pe noul Cod are trimitere la articol.</p>
 </section>
 
 <section class="sec">
-  <h2>Ce găsești</h2>
-  <div class="cols">
-    <div><h3>Antrenament explicat</h3><p>Lucrezi pe acte normative sau pe toate. După fiecare răspuns vezi explicația și temeiul legal, iar greșelile se adună într-o listă separată.</p></div>
-    <div><h3>Simulare de examen</h3><p>{total} de întrebări în ordine aleatorie, în {SIM_MINUTES} de minute, același ritm ca la examen. Punctajul se raportează la 120, cu pragul de 75. La final primești fișa de corectare, cu articolul pentru fiecare greșeală.</p></div>
-    <div><h3>Fără cont</h3><p>Progresul se salvează pe telefonul sau calculatorul tău. Dacă închizi pagina în timpul simulării, continui de unde ai rămas.</p></div>
-    <div><h3>Pagini de studiu</h3><p>Pentru fiecare act normativ, întrebările gratuite cu răspunsuri, de citit și recitit înainte de examen.</p></div>
-  </div>
+  <h2>Cum lucrezi</h2>
+  <dl class="deflist">
+    <dt>Antrenament</dt><dd>Lucrezi pe un act normativ sau pe toate. După fiecare răspuns vezi explicația și temeiul legal, iar greșelile se adună într-o listă separată.</dd>
+    <dt>Simulare</dt><dd>{total} de întrebări în ordine aleatorie, în {SIM_MINUTES} de minute, același ritm ca la examen. Punctajul se raportează la 120, cu pragul de 75, iar la final primești fișa de corectare.</dd>
+    <dt>Pagini de studiu</dt><dd>Pentru fiecare act normativ, întrebările cu răspunsuri, de citit înainte de examen.</dd>
+    <dt>Fără cont</dt><dd>Progresul rămâne pe telefonul sau calculatorul tău. Dacă închizi pagina în timpul simulării, continui de unde ai rămas.</dd>
+  </dl>
 </section>
 
 <section class="sec">
-  <h2>Ce acoperă grilele pentru expert A1</h2>
+  <h2>Ce acoperă grilele</h2>
   <div class="tbl-wrap"><table class="tbl">
     <thead><tr><th>Act normativ</th><th>Întrebări</th></tr></thead>
     <tbody>{rows}</tbody>
@@ -270,16 +320,11 @@ def page_home():
   </table></div>
 </section>
 
-<section class="sec">
-  <h2>O întrebare din grile</h2>
-  {static_question(sample, 1, show_source=True)}
-</section>
-
 {waitlist_box()}
 
 <section class="sec">
-  <h2>Cum sunt făcute grilele</h2>
-  <p>Fiecare întrebare pornește de la un articol dintr-un act normativ publicat și are un singur răspuns corect. Explicația spune de ce e corect, iar temeiul legal îți arată unde să cauți. Grilele nu reproduc subiecte oficiale de examen. Dacă găsești o greșeală, semnaleaz-o din pagina întrebării: o verificăm și o corectăm. <a href="/despre/">Mai multe despre site</a>.</p>
+  <h2>Cum sunt scrise grilele</h2>
+  <p>Fiecare întrebare pornește de la un articol dintr-un act normativ publicat și are un singur răspuns corect. Explicația spune de ce e corect, iar temeiul legal îți arată unde să cauți. Grilele nu reproduc subiecte oficiale de examen. Dacă găsești o greșeală, semnaleaz-o de sub explicație și o corectăm. <a href="/despre/">Despre site</a></p>
 </section>
 """
     schema = [{"@context": "https://schema.org", "@type": "WebSite", "name": CONFIG["name"], "url": BASE + "/",
@@ -289,43 +334,25 @@ def page_home():
                   body, schema=schema)
 
 
-def static_question(q, n, show_source=False):
-    letters = "abcd"
-    order = display_order(q)
-    opts = "".join(f'<li><span class="l">{letters[pos]})</span><span>{fmt(q["o"][orig])}</span></li>' for pos, orig in enumerate(order))
-    src = f' · {fmt(DOMAINS[q["d"]]["label"])}' if show_source else ""
-    return f"""<article class="qlist-item" id="{q['id']}"><ol class="qlist" style="gap:0"><li>
-<span class="qn sc">Întrebarea {n}{src}</span>
-<p class="stem">{fmt(q['q'])}</p>
-<ol class="abcd">{opts}</ol>
-<details class="ans"><summary>Arată răspunsul</summary>
-<p><strong>Răspuns corect: {letters[order.index(q['c'])]})</strong> {fmt(q['o'][q['c']])}</p>
-<p>{fmt(q['e'])}</p>
-<p class="cite"><span class="sc">Temei legal:</span> <em>{fmt(q['r'])}</em></p>
-<p class="go"><a href="/grile/expert-a1/?q={q['id']}">Rezolvă interactiv</a></p>
-</details>
-</li></ol></article>"""
-
-
 def page_quiz():
     dom_labels = {k: d["label"] for k, d in DOMAINS.items()}
     cfg = {"domains": dom_labels, "storeKey": "grile-a1-free-v1", "simKey": "grile-a1-free-sim-v1",
            "simMinutes": SIM_MINUTES,
            "email": CONFIG["contact_email"], "waitlist": CONFIG["waitlist_url"]}
     data = json.dumps(QUESTIONS, ensure_ascii=False).replace("</", "<\\/")
-    study = " · ".join(f'<a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["label"])}</a>' for d in DOMAINS.values())
+    study = ", ".join(f'<a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["label"])}</a>' for d in DOMAINS.values())
     cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/expert-a1/", "Grile Expert A1")])
     body = f"""
 {cr}
-<header class="masthead quiz-head">
-  <p class="kicker sc">Atestare tehnico-profesională · Experți tehnici · MDLPA</p>
-  <h1>Grile Expert A1</h1>
-  <p class="subtitle">Rezistență mecanică și stabilitate pentru construcții cu structura din beton, beton armat, zidărie și lemn</p>
-  <p class="edition">{FREE_TOTAL} de întrebări gratuite · simulare de {SIM_MINUTES} de minute · legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}</p>
-  <nav class="modes sc" aria-label="Mod de lucru">
+<header class="app-head">
+  <div>
+    <h1>Grile expert tehnic A1</h1>
+    <p>Rezistență mecanică și stabilitate, construcții din beton, beton armat, zidărie și lemn. {FREE_TOTAL} de întrebări, legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}.</p>
+  </div>
+  <div class="modes" role="group" aria-label="Mod de lucru">
     <button id="mode-practice" aria-pressed="true">Antrenament</button>
-    <button id="mode-sim" aria-pressed="false">Simulare de examen</button>
-  </nav>
+    <button id="mode-sim" aria-pressed="false">Simulare, {SIM_MINUTES} min</button>
+  </div>
 </header>
 
 <div id="filters" class="filters" role="group" aria-label="Filtru pe acte normative"></div>
@@ -333,9 +360,9 @@ def page_quiz():
 <div id="app" class="layout"><noscript><p>Pentru grilele interactive este nevoie de JavaScript. Întrebările se pot citi și în paginile de studiu de mai jos.</p></noscript></div>
 
 <footer class="notes">
-  <h2 class="sc">Note</h2>
+  <h2>Note</h2>
   <ol>
-    <li>Întrebările sunt material de pregătire redactat pe baza textelor publicate. Nu reproduc subiecte oficiale de examen. Verificați forma în vigoare a fiecărui act înainte de examen.</li>
+    <li>Întrebările sunt material de pregătire redactat pe baza textelor publicate. Nu reproduc subiecte oficiale de examen. Verifică forma în vigoare a fiecărui act înainte de examen.</li>
     <li>Procedura de atestare fixează punctajul maxim (120 de puncte), pragul de promovare (75 de puncte) și durata de regulă a examenului (3 ore). Numărul de întrebări și punctajul pe întrebare se stabilesc pentru fiecare sesiune.</li>
     <li>Simularea gratuită are {FREE_TOTAL} de întrebări în {SIM_MINUTES} de minute, adică același ritm ca la examen (un minut și jumătate pe întrebare). Punctajul se raportează la 120, deci pragul de 75 de puncte înseamnă 25 de răspunsuri corecte din 40.</li>
     <li>Pagini de studiu, cu întrebările gratuite și răspunsurile lor: {study}.</li>
@@ -356,17 +383,19 @@ def page_domain(key):
     qs = [q for q in QUESTIONS if q["d"] == key]
     path = f"/grile/expert-a1/{d['slug']}/"
     items = "".join(f"""<li id="{q['id']}">
-<span class="qn sc">Întrebarea {i + 1}</span>
+<span class="qn">Întrebarea {i + 1} din {len(qs)}</span>
 <p class="stem">{fmt(q['q'])}</p>
 <ol class="abcd">{''.join(f'<li><span class="l">{"abcd"[j]})</span><span>{fmt(q["o"][o])}</span></li>' for j, o in enumerate(display_order(q)))}</ol>
 <details class="ans"><summary>Arată răspunsul</summary>
-<p><strong>Răspuns corect: {"abcd"[display_order(q).index(q['c'])]})</strong> {fmt(q['o'][q['c']])}</p>
+<div class="inner">
+<p class="right">Răspuns corect: {"abcd"[display_order(q).index(q['c'])]}) {fmt(q['o'][q['c']])}</p>
 <p>{fmt(q['e'])}</p>
-<p class="cite"><span class="sc">Temei legal:</span> <em>{fmt(q['r'])}</em></p>
-<p class="go"><a href="/grile/expert-a1/?q={q['id']}">Rezolvă interactiv</a></p>
+{cartus_html([("Temei legal", fmt(q['r']))])}
+<p><a href="/grile/expert-a1/?q={q['id']}">Rezolvă în aplicație</a></p>
+</div>
 </details>
 </li>""" for i, q in enumerate(qs))
-    others = " · ".join(f'<a href="/grile/expert-a1/{o["slug"]}/">{fmt(o["label"])}</a>'
+    others = ", ".join(f'<a href="/grile/expert-a1/{o["slug"]}/">{fmt(o["label"])}</a>'
                         for k, o in DOMAINS.items() if k != key)
     cr, cr_ld = crumbs([("/", "Acasă"), ("/grile/expert-a1/", "Grile Expert A1"), (path, d["label"])])
     body = f"""
@@ -444,7 +473,7 @@ def page_guide_exam():
 <li>Începe cu noul Cod: e materia cu cele mai multe schimbări, iar materialele de pregătire scrise înainte de august 2026 nu îl acoperă.</li>
 <li>Lucrează cu cronometru: simularea gratuită are 40 de întrebări în 60 de minute, același ritm ca la examen. Reia apoi doar întrebările greșite.</li>
 </ul>
-<p><a class="btn primary sc" href="/grile/expert-a1/#simulare">Fă o simulare gratuită</a></p>
+<p><a class="btn primary" href="/grile/expert-a1/#simulare">Fă o simulare gratuită</a></p>
 
 <h2>După atestare</h2>
 <p>Potrivit noului Cod, dreptul de practică al expertului tehnic se acordă pe durată nedeterminată și se confirmă din 5 în 5 ani, pe baza experienței și a cursurilor de pregătire profesională continuă. Specialiștii atestați încheie asigurare de răspundere civilă profesională pe perioade de cel puțin un an, pe toată durata exercitării profesiei.</p>
@@ -471,7 +500,7 @@ def page_guide_code():
 {cr}
 <h1>Legea nr.{NB}169/2026 pentru experți tehnici și verificatori de proiecte</h1>
 <p class="lede">Ce trebuie să știi din noul Cod al construcțiilor pentru examenul de atestare și pentru practică, cu articolul la fiecare regulă.</p>
-<p class="meta">Actualizat la {CONFIG['updated_human']} · text verificat după forma publicată în M.{NB}Of. nr.{NB}661/2026, rectificată în M.{NB}Of. nr.{NB}862/2026</p>
+<p class="meta">Actualizat la {CONFIG['updated_human']}. Text verificat după forma publicată în M.{NB}Of. nr.{NB}661/2026, rectificată în M.{NB}Of. nr.{NB}862/2026.</p>
 
 <nav class="toc"><ol>
 <li><a href="#aplicare">Aplicare și abrogări</a></li>
@@ -534,7 +563,7 @@ def page_guide_code():
 <li>Perioada minimă de garanție a lucrărilor, dacă prin contract nu s-a prevăzut alta: 5 ani pentru CC3 și CC4, 3 ani pentru CC2, un an pentru CC1. <span class="src">Art.{NB}531</span></li>
 </ul>
 <p class="warn">Rezumatul nu înlocuiește textul legii. Înainte de examen sau de o decizie profesională, citește articolul în forma oficială în vigoare.</p>
-<p><a class="btn primary sc" href="/grile/expert-a1/?f=catuc">Rezolvă grilele gratuite pe noul Cod</a></p>
+<p><a class="btn primary" href="/grile/expert-a1/?f=catuc">Rezolvă grilele gratuite pe noul Cod</a></p>
 </article>
 {waitlist_box()}
 """
@@ -616,9 +645,8 @@ def page_404():
 
 def favicon():
     return """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect width="64" height="64" rx="6" fill="#1B1A18"/>
-<text x="32" y="45" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#FAF9F6">A</text>
-<rect x="14" y="51" width="36" height="2.5" fill="#FAF9F6"/>
+<rect width="64" height="64" rx="8" fill="#2E3A9A"/>
+<text x="32" y="42" text-anchor="middle" font-family="'Arial Narrow', 'Roboto Condensed', Arial, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">GA</text>
 </svg>
 """
 
@@ -628,46 +656,49 @@ def og_image(dest):
     from fontTools.ttLib import TTFont
     from PIL import Image, ImageDraw, ImageFont
 
-    def font(name, size, wght):
-        tt = TTFont(ROOT / "assets/fonts" / name)
-        tt.flavor = None
-        buf = BytesIO(); tt.save(buf); buf.seek(0)
-        f = ImageFont.truetype(buf, size)
-        try:
-            f.set_variation_by_axes([wght, min(60, size / 2)] if len(f.get_variation_axes()) > 1 else [wght])
-        except Exception:
-            pass
-        return f
+    cache = {}
 
-    # Pentru diacritice e nevoie de subsetul latin-ext; îl combinăm cu latin desenând pe caractere.
+    def font(name, size):
+        key = (name, size)
+        if key not in cache:
+            tt = TTFont(ROOT / "assets/fonts" / name)
+            tt.flavor = None
+            buf = BytesIO(); tt.save(buf); buf.seek(0)
+            cache[key] = ImageFont.truetype(buf, size)
+        return cache[key]
+
     W, H = 1200, 630
-    paper, ink, muted = (250, 249, 246), (27, 26, 24), (105, 100, 93)
+    paper, ink, pencil, line, stamp = (255, 255, 255), (31, 35, 40), (91, 99, 107), (208, 213, 217), (46, 58, 154)
     img = Image.new("RGB", (W, H), paper)
     d = ImageDraw.Draw(img)
-    fonts = {}
 
-    def draw(x, y, text, size, wght, fill, italic=False):
-        style = "italic" if italic else "normal"
-        lat = fonts.setdefault((size, wght, style, "l"), font(f"source-serif-4-latin-opsz-{style}.woff2", size, wght))
-        ext = fonts.setdefault((size, wght, style, "e"), font(f"source-serif-4-latin-ext-opsz-{style}.woff2", size, wght))
+    def draw(x, y, text, size, weight, fill, family="ibm-plex-sans"):
+        lat = font(f"{family}-latin-{weight}-normal.woff2", size)
+        ext = font(f"{family}-latin-ext-{weight}-normal.woff2", size)
         for ch in text:
             f = ext if ord(ch) > 0xFF else lat
             d.text((x, y), ch, font=f, fill=fill)
             x += f.getlength(ch)
         return x
 
-    d.line([(80, 70), (W - 80, 70)], fill=ink, width=3)
-    d.line([(80, 77), (W - 80, 77)], fill=ink, width=1)
-    draw(80, 104, "GRILE ATESTARE · BETA", 30, 600, muted)
-    draw(80, 175, "Grile pentru examenul de atestare,", 64, 600, ink)
-    draw(80, 255, "după noul Cod al construcțiilor", 64, 600, ink)
-    draw(80, 365, f"Expert tehnic A1 · {FREE_TOTAL} de întrebări gratuite, cu temei legal", 36, 400, ink, italic=True)
-    draw(80, 420, "Antrenament explicat și simulare de examen", 36, 400, ink, italic=True)
-    d.line([(80, H - 110), (W - 80, H - 110)], fill=ink, width=1)
-    draw(80, H - 88, CONFIG["domain"], 34, 600, ink)
-    tag = "Fără cont"
-    tag_w = sum(font("source-serif-4-latin-opsz-normal.woff2", 34, 400).getlength(ch) for ch in tag)
-    draw(W - 80 - tag_w, H - 88, tag, 34, 400, muted)
+    # marca
+    d.rounded_rectangle([80, 80, 136, 136], radius=6, fill=stamp)
+    draw(88, 88, "GA", 34, 600, (255, 255, 255), family="ibm-plex-sans-condensed")
+    draw(156, 92, "Grile Atestare", 34, 600, ink)
+    draw(80, 200, "Grile pentru atestarea ca expert tehnic A1,", 52, 600, ink)
+    draw(80, 268, "după noul Cod al construcțiilor", 52, 600, ink)
+    draw(80, 360, f"{FREE_TOTAL} de întrebări cu explicație și temei legal.", 32, 400, pencil)
+    draw(80, 404, "Antrenament și simulare de examen, fără cont.", 32, 400, pencil)
+    # cartuș
+    x0, y0, x1, y1 = 80, 480, W - 80, 560
+    d.rectangle([x0, y0, x1, y1], outline=ink, width=2)
+    cols = [x0, 460, 820, x1]
+    for x in cols[1:-1]:
+        d.line([(x, y0), (x, y1)], fill=line, width=1)
+    cells = [("Site", "grileatestare.ro"), ("Act normativ", "Legea nr. 169/2026"), ("Acces", "gratuit")]
+    for (k, v), xa in zip(cells, cols[:-1]):
+        draw(xa + 16, y0 + 10, k, 20, 500, pencil, family="ibm-plex-sans-condensed")
+        draw(xa + 16, y0 + 36, v, 28, 600, ink, family="ibm-plex-sans-condensed")
     img.save(dest, "PNG", optimize=True)
 
 
