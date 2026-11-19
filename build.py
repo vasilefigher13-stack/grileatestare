@@ -61,12 +61,9 @@ DOMAINS = {
               "intro": "Codul de proiectare CR 1-1-4/2012 – Evaluarea acțiunii vântului asupra construcțiilor: viteza și presiunea de referință, categoriile de teren, turbulența, răspunsul dinamic."},
 }
 
-# Pe site ajung doar întrebările gratuite. Baza completă nu se publică (nici în repository).
+# Pe site ajung doar grilele de test.
 QUESTIONS = json.loads((ROOT / "questions_free.json").read_text())
 COUNTS = {k: sum(1 for q in QUESTIONS if q["d"] == k) for k in DOMAINS}
-META = json.loads((ROOT / "bank_meta.json").read_text())
-FULL = META["full_counts"]
-FULL_TOTAL = META["full_total"]
 FREE_TOTAL = len(QUESTIONS)
 SIM_MINUTES = 60  # același ritm ca la examen: 120 de întrebări în 180 de minute
 
@@ -210,10 +207,14 @@ def crumbs(items):
     return '<p class="crumbs">' + " / ".join(parts) + "</p>", ld
 
 
-def waitlist_box(heading="Pachetul complet Expert A1, în curând"):
-    text = (f"Pachetul complet are toate cele {FULL_TOTAL} de întrebări și simularea de examen în condiții reale: "
-            f"{FULL_TOTAL} de întrebări în 3 ore. Pregătim apoi grile pentru expert A2, pentru verificatorii de proiecte "
-            "și pentru responsabilii tehnici cu execuția și diriginții de șantier. Lasă-ne adresa de e-mail și te anunțăm când apar.")
+NEXT_TEXT = ("Grile Atestare este acum în versiune de test, cu acces gratuit. Dacă grilele se dovedesc utile și "
+             "interesul e suficient, vom trece la o versiune extinsă, cu mai multe tipuri de grile (alte domenii de "
+             "atestare, verificatori de proiecte, responsabili tehnici cu execuția, diriginți de șantier), "
+             "disponibilă pe bază de cont și abonament.")
+
+
+def waitlist_box(heading="Ce urmează"):
+    text = NEXT_TEXT + " Dacă te-ar interesa, lasă-ne un semn și te anunțăm."
     if CONFIG["waitlist_url"]:
         btn = f'<a class="btn primary sc" href="{esc(CONFIG["waitlist_url"])}" target="_blank" rel="noopener">Anunță-mă</a>'
         note = '<span class="small">Te anunțăm doar la lansare. Te poți dezabona oricând.</span>'
@@ -230,7 +231,7 @@ def waitlist_box(heading="Pachetul complet Expert A1, în curând"):
 def page_home():
     total = FREE_TOTAL
     rows = "".join(
-        f'<tr><td><a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["short"])}</a></td><td>{COUNTS[k]}</td><td>{FULL[k]}</td></tr>'
+        f'<tr><td><a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["short"])}</a></td><td>{COUNTS[k]}</td></tr>'
         for k, d in DOMAINS.items())
     sample = next(q for q in QUESTIONS if q["id"] == "catuc-13")
     body = f"""
@@ -247,7 +248,7 @@ def page_home():
 
 <section class="sec">
   <h2>De ce acum</h2>
-  <p>Din 25 august 2026 se aplică Codul amenajării teritoriului, urbanismului și construcțiilor (Legea nr.{NB}169/2026). Codul a abrogat integral Legea nr.{NB}50/1991 și Legea nr.{NB}350/2001 și cea mai mare parte a Legii nr.{NB}10/1995. Culegerile de grile scrise înainte de această dată nu mai acoperă legislația de bază. Aici, fiecare întrebare pe noul Cod are trimitere la articol: {COUNTS['catuc']} sunt gratuite, iar colecția completă are {FULL['catuc']}.</p>
+  <p>Din 25 august 2026 se aplică Codul amenajării teritoriului, urbanismului și construcțiilor (Legea nr.{NB}169/2026). Codul a abrogat integral Legea nr.{NB}50/1991 și Legea nr.{NB}350/2001 și cea mai mare parte a Legii nr.{NB}10/1995. Culegerile de grile scrise înainte de această dată nu mai acoperă legislația de bază. Aici, fiecare întrebare pe noul Cod are trimitere la articol.</p>
 </section>
 
 <section class="sec">
@@ -263,9 +264,9 @@ def page_home():
 <section class="sec">
   <h2>Ce acoperă grilele pentru expert A1</h2>
   <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Act normativ</th><th>Gratuite</th><th>Pachet complet</th></tr></thead>
+    <thead><tr><th>Act normativ</th><th>Întrebări</th></tr></thead>
     <tbody>{rows}</tbody>
-    <tfoot><tr><td>Total</td><td>{total}</td><td>{FULL_TOTAL}</td></tr></tfoot>
+    <tfoot><tr><td>Total</td><td>{total}</td></tr></tfoot>
   </table></div>
 </section>
 
@@ -309,7 +310,7 @@ def static_question(q, n, show_source=False):
 def page_quiz():
     dom_labels = {k: d["label"] for k, d in DOMAINS.items()}
     cfg = {"domains": dom_labels, "storeKey": "grile-a1-free-v1", "simKey": "grile-a1-free-sim-v1",
-           "simMinutes": SIM_MINUTES, "fullTotal": FULL_TOTAL,
+           "simMinutes": SIM_MINUTES,
            "email": CONFIG["contact_email"], "waitlist": CONFIG["waitlist_url"]}
     data = json.dumps(QUESTIONS, ensure_ascii=False).replace("</", "<\\/")
     study = " · ".join(f'<a href="/grile/expert-a1/{d["slug"]}/">{fmt(d["label"])}</a>' for d in DOMAINS.values())
@@ -320,7 +321,7 @@ def page_quiz():
   <p class="kicker sc">Atestare tehnico-profesională · Experți tehnici · MDLPA</p>
   <h1>Grile Expert A1</h1>
   <p class="subtitle">Rezistență mecanică și stabilitate pentru construcții cu structura din beton, beton armat, zidărie și lemn</p>
-  <p class="edition">{FREE_TOTAL} de întrebări gratuite din {FULL_TOTAL} · simulare de {SIM_MINUTES} de minute · legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}</p>
+  <p class="edition">{FREE_TOTAL} de întrebări gratuite · simulare de {SIM_MINUTES} de minute · legislație verificată la {CONFIG['law_checked'].replace(' ', NB)}</p>
   <nav class="modes sc" aria-label="Mod de lucru">
     <button id="mode-practice" aria-pressed="true">Antrenament</button>
     <button id="mode-sim" aria-pressed="false">Simulare de examen</button>
@@ -336,7 +337,7 @@ def page_quiz():
   <ol>
     <li>Întrebările sunt material de pregătire redactat pe baza textelor publicate. Nu reproduc subiecte oficiale de examen. Verificați forma în vigoare a fiecărui act înainte de examen.</li>
     <li>Procedura de atestare fixează punctajul maxim (120 de puncte), pragul de promovare (75 de puncte) și durata de regulă a examenului (3 ore). Numărul de întrebări și punctajul pe întrebare se stabilesc pentru fiecare sesiune.</li>
-    <li>Simularea gratuită are {FREE_TOTAL} de întrebări în {SIM_MINUTES} de minute, adică același ritm ca la examen (un minut și jumătate pe întrebare). Punctajul se raportează la 120, deci pragul de 75 de puncte înseamnă 25 de răspunsuri corecte din 40. Pachetul complet are {FULL_TOTAL} de întrebări și simularea de 3 ore.</li>
+    <li>Simularea gratuită are {FREE_TOTAL} de întrebări în {SIM_MINUTES} de minute, adică același ritm ca la examen (un minut și jumătate pe întrebare). Punctajul se raportează la 120, deci pragul de 75 de puncte înseamnă 25 de răspunsuri corecte din 40.</li>
     <li>Pagini de studiu, cu întrebările gratuite și răspunsurile lor: {study}.</li>
     <li>Surse: Legea nr.{NB}169/2026 privind Codul amenajării teritoriului, urbanismului și construcțiilor (M.{NB}Of. nr.{NB}661 din 10.08.2026, rectificată în M.{NB}Of. nr.{NB}862 din 14.10.2026); Procedura aprobată prin Ordinul MDLPA nr.{NB}817/2021; Regulamentul aprobat prin Ordinul MDLPA nr.{NB}895/2023; Regulamentul aprobat prin HG nr.{NB}925/1995, cu modificările aduse prin HG nr.{NB}742/2018; P100-1/2013; P100-3/2019; CR 1-1-3/2012; CR 1-1-4/2012.</li>
   </ol>
@@ -372,7 +373,7 @@ def page_domain(key):
 <div class="prose">
 {cr}
 <h1>Grile {fmt(d['short'])} pentru examenul de expert tehnic A1</h1>
-<p class="lede">{len(qs)} întrebări gratuite cu răspunsuri, explicații și temei legal. Pachetul complet are {FULL[key]} de întrebări pe acest act.</p>
+<p class="lede">{len(qs)} întrebări gratuite cu răspunsuri, explicații și temei legal.</p>
 <p>{fmt(d['intro'])}</p>
 <p>Încearcă întâi să răspunzi singur, apoi deschide răspunsul. Pentru notare și progres salvat, <a href="/grile/expert-a1/?f={key}">rezolvă aceleași întrebări interactiv</a>.</p>
 </div>
@@ -438,7 +439,7 @@ def page_guide_exam():
 
 <h2>Cum îți împarți cele 3 ore</h2>
 <ul>
-<li>La 120 de întrebări în 180 de minute ai în medie un minut și jumătate pe întrebare. Răspunde întâi la ce știi sigur, marchează restul și revino la ele.</li>
+<li>Dacă sesiunea are 120 de întrebări, în 180 de minute ai în medie un minut și jumătate pe întrebare. Răspunde întâi la ce știi sigur, marchează restul și revino la ele.</li>
 <li>Dacă regulamentul sesiunii permite bibliografia, exersează cu ea deschisă. Contează cât de repede găsești articolul, nu doar ce ai memorat.</li>
 <li>Începe cu noul Cod: e materia cu cele mai multe schimbări, iar materialele de pregătire scrise înainte de august 2026 nu îl acoperă.</li>
 <li>Lucrează cu cronometru: simularea gratuită are 40 de întrebări în 60 de minute, același ritm ca la examen. Reia apoi doar întrebările greșite.</li>
@@ -552,7 +553,7 @@ def page_about():
 <h1>Despre {esc(CONFIG['name'])}</h1>
 <p class="lede">Grile de pregătire pentru examenele de atestare din construcții, scrise pe baza legislației în vigoare.</p>
 <h2>Ce este</h2>
-<p>{esc(CONFIG['name'])} oferă grile pentru examenul de atestare tehnico-profesională organizat de MDLPA. Prima colecție, pentru expertul tehnic A1, are {FULL_TOTAL} de întrebări, dintre care {FREE_TOTAL} sunt gratuite pe site, cu antrenament explicat și simulare de examen. Site-ul este în versiune beta și nu cere cont.</p>
+<p>{esc(CONFIG['name'])} oferă grile pentru examenul de atestare tehnico-profesională organizat de MDLPA. Prima colecție, pentru expertul tehnic A1, are {FREE_TOTAL} de întrebări de test, gratuite, cu antrenament explicat și simulare de examen. Site-ul este în versiune beta și nu cere cont.</p>
 <h2>Cum sunt scrise întrebările</h2>
 <ul>
 <li>Fiecare întrebare pornește de la un articol, un punct sau o relație dintr-un act normativ publicat și are un singur răspuns corect.</li>
@@ -565,7 +566,7 @@ def page_about():
 <h2>Greșeli și sugestii</h2>
 <p>Am verificat fiecare întrebare cu textul actului normativ, dar o greșeală poate scăpa. Dacă găsești una, folosește legătura „Semnalează o greșeală” de sub explicație sau scrie-ne. Corectăm și actualizăm data din subsolul site-ului. {contact_html}</p>
 <h2>Ce urmează</h2>
-<p>Pregătim pachetul complet Expert A1, cu toate cele {FULL_TOTAL} de întrebări și simularea de 3 ore, apoi grile pentru expert A2, pentru verificatorii de proiecte și, mai departe, pentru responsabilii tehnici cu execuția și diriginții de șantier.</p>
+<p>{NEXT_TEXT}</p>
 </article>
 {waitlist_box()}
 """

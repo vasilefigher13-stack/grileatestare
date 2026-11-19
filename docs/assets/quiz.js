@@ -60,7 +60,7 @@
 
   function waitlistHTML() {
     if (!CFG.waitlist) return "";
-    return '<section class="blk"><h2 class="sc">Pachetul complet</h2><p class="hint" style="margin:0">Toate cele ' + CFG.fullTotal + ' de întrebări și simularea de 3 ore, în curând.</p>' +
+    return '<section class="blk"><h2 class="sc">Ce urmează</h2><p class="hint" style="margin:0">Dacă interesul e suficient, vom trece la o versiune extinsă, cu mai multe tipuri de grile, pe bază de cont și abonament.</p>' +
       '<a class="btn sc" href="' + esc(CFG.waitlist) + '" target="_blank" rel="noopener">Anunță-mă</a></section>';
   }
 
@@ -195,8 +195,8 @@
           ? '<div class="confirm"><p>Ștergeți tot progresul din antrenament?</p><div class="row"><button class="btn sc" id="p-reset-no">Nu</button><button class="btn primary sc" id="p-reset-yes">Da, șterge</button></div></div>'
           : '<button class="linklike" id="p-reset">Șterge progresul</button>') +
         "</section>" +
-        (answered.length === ALL.length && CFG.fullTotal > ALL.length
-          ? '<section class="blk"><h2 class="sc">Ai terminat grilele gratuite</h2><p class="hint" style="margin:0">Pachetul complet are încă ' + (CFG.fullTotal - ALL.length) + " de întrebări.</p></section>"
+        (answered.length === ALL.length
+          ? '<section class="blk"><h2 class="sc">Ai rezolvat toate grilele de test</h2><p class="hint" style="margin:0">Poți relua greșelile din filtrul „Greșite” sau poți face o simulare.</p></section>'
           : "") +
         waitlistHTML() +
       "</aside>";
