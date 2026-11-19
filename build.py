@@ -218,8 +218,8 @@ def waitlist_box(heading="Pachetul complet Expert A1, în curând"):
         btn = f'<a class="btn primary sc" href="{esc(CONFIG["waitlist_url"])}" target="_blank" rel="noopener">Anunță-mă</a>'
         note = '<span class="small">Te anunțăm doar la lansare. Te poți dezabona oricând.</span>'
     elif CONFIG["contact_email"]:
-        btn = f'<a class="btn primary sc" href="{mailto("Lista de asteptare")}">Scrie-ne</a>'
-        note = ""
+        btn = f'<a class="btn primary sc" href="{mailto("Anunta-ma")}">Anunță-mă prin e-mail</a>'
+        note = f'<span class="small">Sau scrie la {esc(CONFIG["contact_email"])} cu subiectul „Anunță-mă”.</span>'
     else:
         btn, note = "", '<span class="small">Formularul de înscriere apare în curând.</span>'
     return f'<section class="box" id="anunta-ma"><h2>{esc(heading)}</h2><p>{text}</p><div class="row">{btn}{note}</div></section>'
@@ -574,23 +574,28 @@ def page_about():
 
 def page_privacy():
     path = "/confidentialitate/"
-    op = CONFIG["operator"] or "[numele operatorului]"
-    contact = CONFIG["contact_email"] or "[adresa de contact]"
+    contact = CONFIG["contact_email"]
+    contact_link = f'<a href="mailto:{esc(contact)}">{esc(contact)}</a>' if contact else "adresa din pagina Despre"
+    if CONFIG["operator"]:
+        op_line = f"Operatorul site-ului {esc(CONFIG['domain'])} este {esc(CONFIG['operator'])}, care poate fi contactat la {contact_link}."
+    else:
+        op_line = f"Site-ul {esc(CONFIG['domain'])} poate fi contactat la {contact_link}."
+    waitlist_sec = ("""<h2>Lista de așteptare</h2>
+<p>Dacă te înscrii pe lista de așteptare, colectăm adresa de e-mail și, opțional, domeniul de atestare care te interesează, prin Google Forms. Le folosim doar ca să te anunțăm când apar grile noi. Temeiul este consimțământul tău, pe care îl poți retrage oricând, printr-un e-mail la adresa de mai sus. Păstrăm datele până la retragerea consimțământului sau până la închiderea listei și nu le transmitem altor persoane.</p>
+""" if CONFIG["waitlist_url"] else "")
     body = f"""
 <article class="prose">
 <h1>Politica de confidențialitate</h1>
 <p class="meta">Ultima actualizare: {CONFIG['updated_human']}</p>
-<p>Operatorul site-ului {esc(CONFIG['domain'])} este {esc(op)}, care poate fi contactat la {esc(contact)}.</p>
+<p>{op_line}</p>
 <h2>Ce date nu colectăm</h2>
 <p>Site-ul nu are conturi de utilizator și nu folosește cookie-uri de urmărire sau de publicitate.</p>
 <h2>Progresul la grile</h2>
 <p>Răspunsurile, progresul la antrenament și simularea în curs se salvează doar în browserul tău (localStorage), pe dispozitivul pe care lucrezi. Nu ajung la noi. Le poți șterge din pagina de grile („Șterge progresul”) sau din setările browserului.</p>
 <h2>Statistici de trafic</h2>
 <p>Folosim Cloudflare Web Analytics, un serviciu care numără vizitele fără cookie-uri și fără să identifice vizitatorii. Datele sunt agregate: pagini vizitate, țara, tipul de dispozitiv și sursa vizitei.</p>
-<h2>Lista de așteptare</h2>
-<p>Dacă te înscrii pe lista de așteptare, colectăm adresa de e-mail și, opțional, domeniul de atestare care te interesează, prin Google Forms. Le folosim doar ca să te anunțăm când apar grile noi. Temeiul este consimțământul tău, pe care îl poți retrage oricând, printr-un e-mail la adresa de mai sus. Păstrăm datele până la retragerea consimțământului sau până la închiderea listei și nu le transmitem altor persoane.</p>
-<h2>E-mailurile trimise de tine</h2>
-<p>Dacă ne scrii, de exemplu ca să semnalezi o greșeală, folosim adresa și mesajul doar ca să-ți răspundem și să corectăm grila.</p>
+{waitlist_sec}<h2>E-mailurile trimise de tine</h2>
+<p>Dacă ne scrii, de exemplu ca să semnalezi o greșeală sau ca să fii anunțat când apar grile noi, folosim adresa și mesajul doar în acest scop: ca să-ți răspundem, să corectăm grila sau să te anunțăm. Poți cere oricând ștergerea lor.</p>
 <h2>Drepturile tale</h2>
 <p>Ai dreptul de acces, de rectificare, de ștergere, de restricționare a prelucrării, de opoziție și la portabilitatea datelor, precum și dreptul de a depune plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (www.dataprotection.ro).</p>
 </article>
